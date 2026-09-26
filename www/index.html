@@ -1,0 +1,3685 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>PDF Editor</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2747D8">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --desk: #E4E8EF;
+    --panel: #F7F8FB;
+    --card: #FFFFFF;
+    --ink: #18202F;
+    --ink2: #556075;
+    --line: #C9D0DC;
+    --accent: #2747D8;
+    --accent-ink: #FFFFFF;
+    --sticky: #FFF1A8;
+    --sticky-line: #E2CE62;
+    --sticky-ink: #2B2508;
+    --danger: #B93030;
+    --pin: #2747D8;
+    --pin2: #1E8F5F;
+    --hl-yellow: #FFE040;
+    --hl-green: #50E870;
+    --hl-pink: #FF80C0;
+    --hl-blue: #50B8FF;
+    --hl-orange: #FFB347;
+    --hl-purple: #C9A0FF;
+    --hl-teal: #40E0C8;
+    --hl-red: #FF6B6B;
+    --hl-yellow-solid: #FFE028;
+    --hl-green-solid: #5AE66E;
+    --hl-pink-solid: #FF6EAA;
+    --hl-blue-solid: #46A0FF;
+    --hl-orange-solid: #FFA733;
+    --hl-purple-solid: #B980FF;
+    --hl-teal-solid: #2DD9BE;
+    --hl-red-solid: #FF5252;
+    --ui: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --read: "Newsreader", Georgia, "Times New Roman", serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --desk: #10141B; --panel: #181D26; --card: #212835; --ink: #E9EDF5; --ink2: #9BA6BA;
+      --line: #2E3746; --accent: #8AA2FF; --accent-ink: #0E1430;
+      --sticky: #3B3413; --sticky-line: #645818; --sticky-ink: #F4EBC2; --danger: #FF8A8A;
+      --pin2: #4FCE97;
+    }
+  }
+  :root[data-theme="dark"] {
+    --desk: #10141B; --panel: #181D26; --card: #212835; --ink: #E9EDF5; --ink2: #9BA6BA;
+    --line: #2E3746; --accent: #8AA2FF; --accent-ink: #0E1430;
+    --sticky: #3B3413; --sticky-line: #645818; --sticky-ink: #F4EBC2; --danger: #FF8A8A;
+    --pin2: #4FCE97;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body { height: 100%; margin: 0; background: var(--desk); color: var(--ink); font: 400 14px/1.4 var(--ui); }
+  [hidden] { display: none !important; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  #app { height: 100%; display: flex; flex-direction: column; }
+
+  /* ---------- top bar ---------- */
+  .bar { zoom: var(--bar-zoom, 1); flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+  .brand svg { width: 16px; height: 21px; color: var(--pin); flex: none; }
+  .doc-name { flex: 1 1 100px; min-width: 0; color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-sep { flex: none; width: 1px; align-self: stretch; margin: 2px 0; background: var(--line); }
+  .group { display: flex; align-items: center; gap: 4px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); font-weight: 500; font-size: 13px; white-space: nowrap; }
+  .btn:hover:not(:disabled) { border-color: var(--accent); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  .btn.tool { border-color: var(--line); }
+  .btn.tool[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+  .btn.danger { color: var(--danger); border-color: var(--danger); }
+  .btn.icon { width: 34px; padding: 0; }
+  .btn svg { width: 16px; height: 16px; flex: none; }
+  .page-in { width: 52px; min-height: 34px; text-align: center; border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: 0 4px; -moz-appearance: textfield; }
+  .page-in::-webkit-outer-spin-button, .page-in::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .of { color: var(--ink2); white-space: nowrap; }
+  .save-state { color: var(--ink2); font-size: 12px; white-space: nowrap; }
+  .save-state.bad { color: var(--danger); white-space: normal; }
+
+  /* ---------- slim secondary bar (status) ---------- */
+  .subbar { flex: none; display: flex; align-items: center; gap: 8px; padding: 4px 12px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .subbar .btn.sm { min-height: 26px; padding: 3px 10px; font-size: 12px; border-radius: 6px; }
+  .subbar .save-state { margin-left: 2px; }
+  /* status bar hidden; only appears if saving fails (so the warning isn't lost) */
+  .subbar { display: none; }
+  .subbar:has(.save-state.bad) { display: flex; }
+
+  .swatches { display: flex; align-items: center; gap: 5px; padding: 0 2px; }
+  .swatch { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 2px solid transparent; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+  .swatch[aria-pressed="true"] { border-color: var(--ink); }
+  .swatch.c-yellow { background: var(--hl-yellow-solid); } .swatch.c-green { background: var(--hl-green-solid); }
+  .swatch.c-pink { background: var(--hl-pink-solid); } .swatch.c-blue { background: var(--hl-blue-solid); }
+  .swatch.c-orange { background: var(--hl-orange-solid); } .swatch.c-purple { background: var(--hl-purple-solid); }
+  .swatch.c-teal { background: var(--hl-teal-solid); } .swatch.c-red { background: var(--hl-red-solid); }
+
+  .size-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 3px 4px; }
+  .size-row { display: flex; align-items: center; gap: 6px; }
+  .size-wrap input[type="range"] { width: 74px; accent-color: var(--accent); }
+  .size-wrap .size-label { color: var(--ink2); font-size: 11px; white-space: nowrap; }
+  .hl-free-toggle { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .hl-free-toggle input { accent-color: var(--accent); cursor: pointer; }
+  .hl-free-toggle .size-label { cursor: pointer; }
+
+  /* ---------- work area ---------- */
+  .work { flex: 1; min-height: 0; display: flex; position: relative; }
+  .viewer { flex: 1; min-width: 0; overflow: auto; position: relative; }
+  .viewer.dragover { outline: 3px dashed var(--accent); outline-offset: -10px; }
+  .stage { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 24px 24px 56px; }
+  .page-wrap { position: relative; flex: none; background: #fff; box-shadow: 0 2px 4px rgba(10,20,40,.18), 0 16px 40px rgba(10,20,40,.20); }
+  .page-wrap canvas { display: block; width: 100%; height: 100%; }
+  .page-num { position: absolute; left: 10px; top: 10px; z-index: 6; padding: 3px 9px; border-radius: 999px; background: rgba(24,32,47,.72); color: #fff; font: 500 11px/1 var(--ui); pointer-events: none; }
+  .hl-layer { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; mix-blend-mode: multiply; }
+  .hl-rect { position: absolute; border-radius: 1px; pointer-events: auto; cursor: pointer; }
+  .hl-layer.active-tool .hl-rect { pointer-events: none; }
+  .stage.erasing, .stage.erasing .text-layer, .stage.erasing .text-layer span { cursor: none; user-select: none; -webkit-user-select: none; }
+  .stage.erasing { touch-action: none; }
+  .stage.erasing .hl-rect { pointer-events: none; }
+  .draw-layer { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .draw-layer svg { display: block; width: 100%; height: 100%; overflow: visible; }
+  .stage.drawing, .stage.drawing .text-layer, .stage.drawing .text-layer span { cursor: crosshair; user-select: none; -webkit-user-select: none; }
+  .stage.drawing { touch-action: none; }
+  .eraser-ring { position: fixed; z-index: 35; display: none; pointer-events: none; transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid #111; box-shadow: 0 0 0 1px #fff; background: transparent; }
+  .hl-ring { position: fixed; z-index: 35; display: none; pointer-events: none; transform: translate(-50%, -50%); border-radius: 50%; border: 2px solid #b8860b; box-shadow: 0 0 0 1px #fff; background: rgba(255, 224, 64, .25); }
+  .stage.highlighting { cursor: none; }
+  .sel-layer { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; mix-blend-mode: multiply; }
+  .sel-rect { position: absolute; border-radius: 1px; background: rgba(39,71,216,.35); }
+  .hl-del { position: fixed; z-index: 20; width: 22px; height: 22px; display: none; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--card); color: var(--ink2); box-shadow: 0 2px 6px rgba(0,0,0,.25); pointer-events: auto; }
+  .hl-del.show { display: grid; }
+  .hl-del:hover { color: var(--danger); border-color: var(--danger); }
+  .hl-del svg { width: 12px; height: 12px; }
+  .comment-layer { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+  .comment-layer.placing { pointer-events: auto; cursor: crosshair; }
+  .comment-pin { position: absolute; transform: translate(-50%, -100%); width: 26px; height: 26px; padding: 0; margin: 0; border: none; border-radius: 50% 50% 50% 4px; background: var(--pin); color: #fff; display: grid; place-items: center; pointer-events: auto; box-shadow: 0 2px 6px rgba(0,0,0,.3); cursor: pointer; }
+  .comment-pin svg { width: 14px; height: 14px; }
+  .comment-pin.pending { background: var(--accent); opacity: .85; }
+  .comment-pin:hover { filter: brightness(1.08); }
+  .attach-pin { position: absolute; transform: translate(-50%, -100%); width: 26px; height: 26px; padding: 0; margin: 0; border: none; border-radius: 50% 50% 50% 4px; background: var(--pin2); color: #fff; display: grid; place-items: center; pointer-events: auto; box-shadow: 0 2px 6px rgba(0,0,0,.3); cursor: pointer; }
+  .attach-pin svg { width: 13px; height: 13px; }
+  .attach-pin:hover { filter: brightness(1.08); }
+  .at-pop { position: fixed; z-index: 22; width: max-content; max-width: 260px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+  .at-pop[hidden] { display: none; }
+  .at-pop .at-name { font-weight: 600; font-size: 13px; word-break: break-word; margin: 0 0 2px; }
+  .at-pop .at-size { color: var(--ink2); font-size: 11px; margin: 0 0 8px; }
+  .at-pop .at-actions { display: flex; gap: 6px; }
+  .at-pop .btn { min-height: 28px; padding: 4px 10px; font-size: 12px; }
+  .text-layer { position: absolute; top: 0; left: 0; transform-origin: 0 0; line-height: 1; z-index: 3; pointer-events: none; --scale-factor: 1; }
+  .text-layer span, .text-layer br { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0 0; }
+  .text-layer span.ocr { font-family: Arial, Helvetica, sans-serif; }
+  .text-layer.selectable { pointer-events: auto; }
+  .text-layer.selectable span { pointer-events: auto; }
+  .text-layer.select-mode { cursor: text; user-select: text; -webkit-user-select: text; }
+  /* Real ::selection paints one rect per PDF text run, leaving visible gaps at
+     word spaces. We hide it and paint a merged, gapless rect ourselves in
+     .sel-layer (see updateSelPreview), while the real selection/copy still works. */
+  .text-layer ::selection { background: transparent; }
+
+  .chip { position: sticky; top: 12px; z-index: 6; width: max-content; max-width: calc(100% - 24px); margin: 12px auto 0; padding: 8px 14px; border-radius: 999px; background: var(--ink); color: var(--desk); font-weight: 500; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
+
+  /* ---------- empty state ---------- */
+  .empty { max-width: 500px; margin: 9vh auto 0; padding: 0 24px; }
+  .empty svg { width: 100%; max-width: 400px; height: auto; display: block; margin-bottom: 26px; }
+  .empty h1 { margin: 0 0 10px; font: 600 30px/1.15 var(--ui); letter-spacing: -0.02em; }
+  .empty p { margin: 0 0 22px; color: var(--ink2); font-size: 16px; line-height: 1.5; max-width: 46ch; }
+  .empty .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .empty .btn { min-height: 40px; padding: 8px 16px; font-size: 14px; }
+  .il-paper { fill: #fff; stroke: var(--line); }
+  .il-line { stroke: var(--line); stroke-width: 3; stroke-linecap: round; }
+  .il-hl { fill: #FFE040; }
+
+  /* ---------- toast + dialog ---------- */
+  .toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 64px); z-index: 30; transform: translate(-50%, -12px); display: flex; align-items: center; gap: 14px; max-width: min(92vw, 520px); padding: 10px 16px; border-radius: 10px; background: var(--ink); color: var(--desk); font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.3); opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; }
+
+  /* ---------- AI context menu ---------- */
+  .ai-menu { position: fixed; z-index: 40; display: flex; flex-direction: column; min-width: 168px; padding: 4px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); box-shadow: 0 8px 24px rgba(0,0,0,.28); }
+  .ai-menu[hidden] { display: none; }
+  .ai-menu button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 7px; background: transparent; text-align: left; font-size: 13px; font-weight: 500; color: var(--ink); }
+  .ai-menu button:hover { background: var(--panel); }
+  .ai-menu button svg { width: 15px; height: 15px; flex: none; color: var(--accent); }
+
+  /* ---------- AI modal (result / settings) ---------- */
+  .ai-backdrop { position: fixed; inset: 0; z-index: 45; background: rgba(10,12,18,.4); }
+  .ai-backdrop[hidden] { display: none; }
+  .ai-modal { position: fixed; z-index: 46; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(92vw, 460px); max-height: min(80vh, 560px); display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; background: var(--card); box-shadow: 0 16px 48px rgba(0,0,0,.35); }
+  .ai-modal[hidden] { display: none; }
+  .ai-modal-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 13px; }
+  .ai-modal-body { flex: 1 1 auto; overflow-y: auto; padding: 14px; font: 400 14px/1.55 var(--read); white-space: pre-wrap; }
+  .ai-modal-body.center { display: flex; align-items: center; justify-content: center; color: var(--ink2); font: 400 13px/1.4 var(--ui); }
+  .ai-modal-body.err { color: var(--danger); font: 400 13px/1.4 var(--ui); white-space: normal; }
+  .ai-modal-src { flex: none; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--ink2); font-size: 11px; max-height: 72px; overflow-y: auto; }
+  .ai-modal-foot { flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--line); }
+  .ai-field { display: flex; flex-direction: column; gap: 4px; }
+  .ai-field label { font-size: 12px; font-weight: 600; color: var(--ink2); }
+  .ai-field input, .ai-field textarea, .ai-field select { padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font: 400 13px/1.4 var(--ui); width: 100%; }
+  .ai-field textarea { min-height: 64px; resize: vertical; font-family: ui-monospace, monospace; font-size: 12px; }
+  .ai-hint { font-size: 11px; color: var(--ink2); }
+  .ai-dlg-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .toast button { border: 0; background: none; color: var(--accent); font-weight: 600; padding: 2px 4px; filter: brightness(1.5); }
+  dialog { width: min(580px, 92vw); padding: 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink); }
+  dialog::backdrop { background: rgba(8, 12, 20, .55); }
+  dialog h2 { margin: 0 0 6px; font: 600 18px var(--ui); letter-spacing: -0.01em; }
+  dialog p { margin: 0 0 12px; color: var(--ink2); }
+  .dlg-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .dlg-actions .spacer { flex: 1; }
+  .cmt-panel { position: relative; flex: none; display: flex; flex-direction: column;
+    width: 380px; min-width: 300px; max-width: 60vw; padding: 16px 18px; background: var(--panel);
+    border-left: 1px solid var(--line); box-shadow: -6px 0 20px rgba(0,0,0,.12); }
+  .cmt-panel[hidden] { display: none; }
+  .cmt-panel.compact .cmt-toolbar { display: none; }
+  #cmtToolbarToggle svg { transition: transform .15s; }
+  .cmt-panel.compact #cmtToolbarToggle svg { transform: rotate(180deg); }
+  /* Floating button that hides/shows the whole top toolbar so the page can
+     be read full-screen; kept outside .bar so it's still reachable once
+     the toolbar itself is hidden. */
+  .toolbar-toggle { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); right: 8px; z-index: 50;
+    width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink2); display: grid; place-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,.28); cursor: pointer; }
+  .toolbar-toggle:hover { color: var(--ink); }
+  .toolbar-toggle svg { width: 16px; height: 16px; }
+  body.toolbar-hidden .bar { display: none; }
+  body.toolbar-hidden .subbar { display: none; }
+  /* Comment-panel background choices: each one re-defines the colour variables for the panel only */
+  .cmt-panel[data-bg] { color: var(--ink); }
+  .cmt-panel[data-bg] .btn:not(.primary):not(.danger):not([aria-pressed="true"]), .cmt-panel[data-bg] select, .cmt-panel[data-bg] input { color: var(--ink); }
+  .cmt-panel[data-bg="dark"]  { color-scheme: dark;  --panel:#000000; --card:#000000; --ink:#F2F2F2; --ink2:#A3A3A3; --line:#3A3A3A; --accent:#8AA2FF; --accent-ink:#0E1430; --danger:#FF8A8A; }
+  .cmt-panel[data-bg="white"] { color-scheme: light; --panel:#FFFFFF; --card:#FFFFFF; --ink:#18202F; --ink2:#556075; --line:#C9D0DC; --accent:#2747D8; --accent-ink:#FFFFFF; --danger:#B93030; }
+  .cmt-panel[data-bg="cream"] { color-scheme: light; --panel:#F3EAD3; --card:#FFF9E8; --ink:#2B2416; --ink2:#6B5F45; --line:#D8CBA6; --accent:#9A5B00; --accent-ink:#FFFFFF; --danger:#B93030; }
+  .cmt-panel[data-bg="gray"]  { color-scheme: light; --panel:#E4E7EC; --card:#F5F6F8; --ink:#18202F; --ink2:#556075; --line:#BFC7D3; --accent:#2747D8; --accent-ink:#FFFFFF; --danger:#B93030; }
+  .cmt-panel[data-bg="night"] { color-scheme: dark;  --panel:#0B1220; --card:#111A2E; --ink:#E6ECFA; --ink2:#8FA0C0; --line:#22314F; --accent:#7FB0FF; --accent-ink:#06122B; --danger:#FF8A8A; }
+  .cmt-panel.resizing { user-select: none; }
+  .cmt-head { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
+  .cmt-head h2 { margin: 0; flex: 1; font: 600 18px var(--ui); letter-spacing: -0.01em; }
+  .cmt-resize { position: absolute; left: -5px; top: 0; bottom: 0; width: 10px; cursor: col-resize; touch-action: none; z-index: 2; }
+  .cmt-resize::after { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; background: transparent; }
+  .cmt-resize:hover::after, .cmt-panel.resizing .cmt-resize::after { background: var(--accent); }
+  .cmt-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; flex: none; }
+  .cmt-toolbar input[type="number"] { width: 68px; min-height: 34px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); text-align: center; }
+  .cmt-toolbar select { min-height: 34px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+  .cmt-editor { min-height: 140px; overflow: auto; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+  .cmt-editor:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .cmt-panel .cmt-editor { flex: 1; }
+  .cmt-panel .dlg-actions { flex: none; }
+  @media (max-width: 820px) {
+    /* Side-by-side stops making sense once the PDF itself barely fits, so
+       below that width the panel goes back to floating over the page. */
+    .cmt-panel { position: fixed; inset: 0; z-index: 40; width: 100% !important; min-width: 0; max-width: 100%; box-shadow: none; }
+    .cmt-resize { display: none; }
+  }
+
+  /* ---------- narrow screens ---------- */
+  @media (max-width: 820px) {
+    .stage { padding: 16px 12px 40px; }
+    .doc-name { display: none; }
+    .save-state:not(.bad) { display: none; }
+    .bar { gap: 6px 8px; padding: 6px 10px; }
+    .brand span { display: none; }
+    .btn, .page-in { min-height: 32px; }
+    .btn.icon { width: 32px; }
+    .btn span.lbl { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="bar">
+    <div class="brand">
+      <svg viewBox="0 0 30 40" aria-hidden="true"><path fill="currentColor" d="M15 39C15 39 2 24.5 2 14.5C2 7 7.9 1 15 1s13 6 13 13.5C28 24.5 15 39 15 39z"/><circle cx="15" cy="14.5" r="5.5" fill="#fff"/></svg>
+      <span>PDF Editor</span>
+    </div>
+    <span class="doc-name" id="docName"></span>
+    <div class="group">
+      <button class="btn primary" id="openBtn" type="button">Open PDF</button>
+    </div>
+    <div class="group" role="group" aria-label="Page">
+      <button class="btn icon" id="prevBtn" type="button" aria-label="Previous page" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg></button>
+      <input class="page-in" id="pageIn" type="number" min="1" value="1" aria-label="Page number" disabled>
+      <span class="of" id="pageOf">of 1</span>
+      <button class="btn icon" id="nextBtn" type="button" aria-label="Next page" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 3 5 5-5 5"/></svg></button>
+    </div>
+    <div class="group" role="group" aria-label="Zoom">
+      <button class="btn icon" id="zoomOut" type="button" aria-label="Zoom out" disabled>−</button>
+      <button class="btn" id="zoomFit" type="button" title="Reset to fit width" disabled>100%</button>
+      <button class="btn icon" id="zoomIn" type="button" aria-label="Zoom in" disabled>+</button>
+    </div>
+    <span class="bar-sep"></span>
+    <div class="group">
+      <button class="btn tool" id="hlBtn" type="button" aria-pressed="false" title="Drag across text to highlight it (shortcut: H)" disabled>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 2.5l4 4-7 7-4.5 1 1-4.5z"/><path d="M2 14h12"/></svg>
+        <span class="lbl">Highlight</span>
+      </button>
+      <div class="swatches" id="swatches" hidden>
+        <button class="swatch c-yellow" data-c="yellow" type="button" aria-pressed="true" aria-label="Yellow"></button>
+        <button class="swatch c-green" data-c="green" type="button" aria-pressed="false" aria-label="Green"></button>
+        <button class="swatch c-pink" data-c="pink" type="button" aria-pressed="false" aria-label="Pink"></button>
+        <button class="swatch c-blue" data-c="blue" type="button" aria-pressed="false" aria-label="Blue"></button>
+        <button class="swatch c-orange" data-c="orange" type="button" aria-pressed="false" aria-label="Orange"></button>
+        <button class="swatch c-purple" data-c="purple" type="button" aria-pressed="false" aria-label="Purple"></button>
+        <button class="swatch c-teal" data-c="teal" type="button" aria-pressed="false" aria-label="Teal"></button>
+        <button class="swatch c-red" data-c="red" type="button" aria-pressed="false" aria-label="Red"></button>
+      </div>
+      <div class="size-wrap" id="hlSizeWrap" hidden>
+        <div class="size-row">
+          <span class="size-label">Size</span>
+          <input type="range" id="hlSizeRange" min="60" max="180" step="10" value="100" aria-label="Highlight thickness">
+        </div>
+        <label class="hl-free-toggle" id="hlFreeOcrWrap" title="When on, dragging over text found by Scan text (OCR) is drawn freehand under your cursor instead of snapping to the recognized words - the same free dragging you get on a part with no OCR text at all.">
+          <input type="checkbox" id="hlFreeOcrChk" aria-label="Free-draw over OCR text">
+          <span class="size-label">Free-draw on OCR text</span>
+        </label>
+      </div>
+    </div>
+    <div class="group">
+      <button class="btn tool" id="drawBtn" type="button" aria-pressed="false" title="Drag to draw freehand on the page (shortcut: D)" disabled>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 2.5a1.6 1.6 0 0 1 2.3 2.3L5.4 13.2l-3.1.8.8-3.1z"/><path d="M9.8 4.2l2.3 2.3"/></svg>
+        <span class="lbl">Draw</span>
+      </button>
+      <div class="swatches" id="drawSwatches" hidden>
+        <button class="swatch c-red" data-c="red" type="button" aria-pressed="true" aria-label="Red"></button>
+        <button class="swatch c-yellow" data-c="yellow" type="button" aria-pressed="false" aria-label="Yellow"></button>
+        <button class="swatch c-green" data-c="green" type="button" aria-pressed="false" aria-label="Green"></button>
+        <button class="swatch c-pink" data-c="pink" type="button" aria-pressed="false" aria-label="Pink"></button>
+        <button class="swatch c-blue" data-c="blue" type="button" aria-pressed="false" aria-label="Blue"></button>
+        <button class="swatch c-orange" data-c="orange" type="button" aria-pressed="false" aria-label="Orange"></button>
+        <button class="swatch c-purple" data-c="purple" type="button" aria-pressed="false" aria-label="Purple"></button>
+        <button class="swatch c-teal" data-c="teal" type="button" aria-pressed="false" aria-label="Teal"></button>
+      </div>
+      <div class="size-wrap" id="drawSizeWrap" hidden>
+        <span class="size-label">Size</span>
+        <input type="range" id="drawSizeRange" min="1" max="16" step="1" value="4" aria-label="Pen thickness">
+      </div>
+    </div>
+    <div class="group">
+      <button class="btn tool" id="erBtn" type="button" aria-pressed="false" title="Click or drag over a highlight or drawing to erase it (shortcut: E)" disabled>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.2 13.5H13"/><path d="M3.2 10.3 9.6 3.9a1.4 1.4 0 0 1 2 0l1.9 1.9a1.4 1.4 0 0 1 0 2l-5.4 5.7H5.4a1 1 0 0 1-.7-.3L3.2 11.7a1 1 0 0 1 0-1.4z"/><path d="M6.4 7.1l4.4 4.4"/></svg>
+        <span class="lbl">Eraser</span>
+      </button>
+    </div>
+    <div class="group">
+      <button class="btn tool" id="cmtBtn" type="button" aria-pressed="false" title="Click a spot on the page to pin a comment (shortcut: C)" disabled>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h12v8H6l-3 3v-3H2z"/></svg>
+        <span class="lbl">Comment</span>
+      </button>
+    </div>
+    <div class="group">
+      <button class="btn tool" id="atBtn" type="button" aria-pressed="false" title="Click a spot on the page to attach a file (shortcut: A)" disabled>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4.5 5.5 10a2 2 0 1 0 2.83 2.83L14 7.16a3.5 3.5 0 1 0-4.95-4.95L3.5 7.75"/></svg>
+        <span class="lbl">Attach</span>
+      </button>
+    </div>
+    <div class="group">
+      <button class="btn tool" id="ocrBtn" type="button" aria-pressed="false" title="Make text inside pictures and scanned pages selectable (OCR)" disabled>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5.5V3a1 1 0 0 1 1-1h2.5M10.5 2H13a1 1 0 0 1 1 1v2.5M14 10.5V13a1 1 0 0 1-1 1h-2.5M5.5 14H3a1 1 0 0 1-1-1v-2.5M4.5 8h7"/></svg>
+        <span class="lbl">Scan text</span>
+      </button>
+    </div>
+    <span class="bar-sep"></span>
+    <div class="group">
+      <button class="btn icon" id="undoBtn" type="button" aria-label="Undo" title="Undo (Ctrl+Z)" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a5 5 0 1 1 1.6 3.7M3 8V4M3 8h4"/></svg></button>
+      <button class="btn icon" id="redoBtn" type="button" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 1 0-1.6 3.7M13 8V4M13 8H9"/></svg></button>
+    </div>
+    <span class="bar-sep"></span>
+    <button class="btn" id="exportBtn" type="button" title="Save into this PDF (Ctrl+S). Shift-click, or Ctrl+Shift+S, to save as a new file instead." disabled>Save PDF</button>
+    <span class="bar-sep"></span>
+    <div class="group">
+      <button class="btn icon" id="aiSettingsBtn" type="button" aria-label="AI translate settings" title="AI translate settings"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M3.2 12.8l1.4-1.4M11.4 4.6l1.4-1.4"/><circle cx="8" cy="8" r="3"/></svg></button>
+    </div>
+    <span class="bar-sep"></span>
+    <div class="group" role="group" aria-label="Toolbar size">
+      <button class="btn icon" id="barSmaller" type="button" aria-label="Make the toolbar smaller" title="Make the toolbar smaller"><span style="font-size:12px;font-weight:600">A&minus;</span></button>
+      <button class="btn icon" id="barLarger" type="button" aria-label="Make the toolbar larger" title="Make the toolbar larger"><span style="font-size:16px;font-weight:600">A+</span></button>
+    </div>
+  </header>
+
+  <button class="toolbar-toggle" id="toolbarToggle" type="button" aria-pressed="false" aria-label="Hide toolbar" title="Hide toolbar">
+    <svg id="toolbarToggleIcon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>
+  </button>
+
+  <div class="subbar" id="subbar">
+    <span class="save-state" id="saveState" role="status" aria-live="polite"></span>
+  </div>
+
+  <main class="work" id="work">
+    <section class="viewer" id="viewer" aria-label="PDF page">
+      <div class="chip" id="addHint" hidden></div>
+
+      <div class="empty" id="empty">
+        <svg viewBox="0 0 360 140" role="img" aria-label="A page of text with one line highlighted in yellow">
+          <rect class="il-paper" x="8" y="8" width="344" height="124" rx="4"/>
+          <line class="il-line" x1="28" y1="36" x2="220" y2="36"/>
+          <rect class="il-hl" x="28" y="50" width="270" height="16" rx="2"/>
+          <line class="il-line" x1="28" y1="86" x2="200" y2="86"/>
+          <line class="il-line" x1="28" y1="106" x2="260" y2="106"/>
+        </svg>
+        <h1>Highlight anything in a PDF</h1>
+        <p>Drag across the PDF's own text to highlight it, in whichever color you like. The original page is never changed until you choose to save a copy.</p>
+        <div class="actions">
+          <button class="btn primary" id="emptyOpen" type="button">Choose a PDF</button>
+          <button class="btn" id="sampleBtn" type="button">Try a sample page</button>
+        </div>
+      </div>
+
+      <div class="stage" id="stage" hidden></div>
+    </section>
+
+    <aside class="cmt-panel" id="cmtPanel" hidden aria-label="Comment editor">
+      <div class="cmt-resize" id="cmtResize"></div>
+      <div class="cmt-head">
+        <h2>Comment</h2>
+        <button class="btn icon" id="cmtToolbarToggle" type="button" aria-pressed="false" aria-label="Hide formatting toolbar" title="Hide formatting toolbar">
+          <svg id="cmtToolbarToggleIcon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l5-5 5 5"/></svg>
+        </button>
+        <button class="btn icon" id="cmtClose" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="cmt-toolbar">
+        <button class="btn icon" id="cmtBold" type="button" aria-label="Bold" title="Bold"><b>B</b></button>
+        <button class="btn icon tool" id="cmtBoldUl" type="button" aria-pressed="false" aria-label="Underline all bold text" title="Underline all bold text (click again to remove the underlines)"><b><u>B</u></b></button>
+        <select id="cmtFont" aria-label="Font">
+          <option value="Instrument Sans, sans-serif">Sans-serif</option>
+          <option value="Newsreader, serif">Serif</option>
+          <option value="ui-monospace, Menlo, Consolas, monospace">Monospace</option>
+          <option value="Times New Roman, Times, serif" style="font-family:Times New Roman, Times, serif">Times New Roman</option>
+          <option value="Arial, Helvetica, sans-serif" style="font-family:Arial, Helvetica, sans-serif">Arial</option>
+          <option value="Calibri, Carlito, sans-serif" style="font-family:Calibri, Carlito, sans-serif">Calibri</option>
+          <option value="Cambria, Georgia, serif" style="font-family:Cambria, Georgia, serif">Cambria</option>
+          <option value="Georgia, serif" style="font-family:Georgia, serif">Georgia</option>
+          <option value="Verdana, Geneva, sans-serif" style="font-family:Verdana, Geneva, sans-serif">Verdana</option>
+          <option value="Tahoma, Geneva, sans-serif" style="font-family:Tahoma, Geneva, sans-serif">Tahoma</option>
+          <option value="Trebuchet MS, Helvetica, sans-serif" style="font-family:Trebuchet MS, Helvetica, sans-serif">Trebuchet MS</option>
+          <option value="Segoe UI, Roboto, sans-serif" style="font-family:Segoe UI, Roboto, sans-serif">Segoe UI</option>
+          <option value="Garamond, Georgia, serif" style="font-family:Garamond, Georgia, serif">Garamond</option>
+          <option value="Palatino Linotype, Palatino, Georgia, serif" style="font-family:Palatino Linotype, Palatino, Georgia, serif">Palatino</option>
+          <option value="Courier New, Courier, monospace" style="font-family:Courier New, Courier, monospace">Courier New</option>
+          <option value="Comic Sans MS, Comic Sans, cursive" style="font-family:Comic Sans MS, Comic Sans, cursive">Comic Sans MS</option>
+        </select>
+        <input id="cmtSizePt" type="number" min="4" max="300" step="0.5" inputmode="decimal" aria-label="Exact font size in points" title="Exact font size in points - type a number and press Enter">
+        <select id="cmtSize" aria-label="Font size preset">
+          <option value="10">Small</option>
+          <option value="12" selected>Normal</option>
+          <option value="18">Large</option>
+          <option value="36">Extra large</option>
+        </select>
+        <select id="cmtBg" aria-label="Comment background color" title="Comment background color">
+          <option value="default">Background: Default</option>
+          <option value="dark">Background: Dark</option>
+          <option value="white">Background: White</option>
+          <option value="cream">Background: Cream</option>
+          <option value="gray">Background: Light gray</option>
+          <option value="night">Background: Night blue</option>
+        </select>
+      </div>
+      <div id="cmtEditor" class="cmt-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Comment text"></div>
+      <div class="dlg-actions">
+        <button class="btn danger" id="cmtDelete" type="button" hidden>Delete</button>
+        <span class="spacer"></span>
+        <button class="btn" id="cmtCancel" type="button">Cancel</button>
+        <button class="btn primary" id="cmtSave" type="button">Save</button>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<button class="hl-del" id="hlDel" type="button" aria-label="Remove highlight" title="Remove highlight"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10"/></svg></button>
+
+<div class="at-pop" id="atPop" hidden>
+  <p class="at-name" id="atPopName"></p>
+  <p class="at-size" id="atPopSize"></p>
+  <div class="at-actions">
+    <button class="btn primary" id="atPopOpen" type="button">Download</button>
+    <button class="btn danger" id="atPopDelete" type="button">Delete</button>
+  </div>
+</div>
+
+<div class="ai-menu" id="aiMenu" hidden role="menu">
+  <button id="aiMenuTranslate" type="button" role="menuitem"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h7M5.5 2v1.5M3 3c.3 2.4 1.7 4.4 3.8 5.7M8 4c-.7 2.7-2.3 4.9-4.6 6.4M9 14l3-8 3 8M9.8 12h4.4"/></svg><span>Translate selection</span></button>
+  <button id="aiMenuSettings" type="button" role="menuitem"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M3.2 12.8l1.4-1.4M11.4 4.6l1.4-1.4"/><circle cx="8" cy="8" r="3"/></svg><span>AI settings\u2026</span></button>
+</div>
+
+<div class="ai-backdrop" id="aiBackdrop" hidden></div>
+
+<div class="ai-modal" id="aiResultModal" hidden role="dialog" aria-label="AI translation">
+  <div class="ai-modal-head"><span id="aiResultTitle">Translation</span><button class="btn icon" id="aiResultClose" type="button" aria-label="Close">\u00d7</button></div>
+  <div class="ai-modal-body" id="aiResultBody"></div>
+  <div class="ai-modal-src" id="aiResultSrc" hidden></div>
+</div>
+
+<div class="ai-modal" id="aiSettingsModal" hidden role="dialog" aria-label="AI translate settings">
+  <div class="ai-modal-head"><span>AI translate settings</span><button class="btn icon" id="aiSettingsClose" type="button" aria-label="Close">\u00d7</button></div>
+  <div class="ai-modal-foot" style="border-top:0;">
+    <div class="ai-field">
+      <label for="aiApiKey">Gemini API key</label>
+      <input id="aiApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="AIza\u2026">
+      <span class="ai-hint">Stored only in this browser (localStorage). Get a key at aistudio.google.com/apikey.</span>
+    </div>
+    <div class="ai-field">
+      <label for="aiModel">Model</label>
+      <select id="aiModel">
+        <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+        <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+        <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+      </select>
+    </div>
+    <div class="ai-field">
+      <label for="aiLang">Translate to</label>
+      <input id="aiLang" type="text" placeholder="English">
+    </div>
+    <div class="ai-field">
+      <label for="aiPrompt">Prompt template</label>
+      <textarea id="aiPrompt" spellcheck="false"></textarea>
+      <span class="ai-hint">Use {text} for the selected text and {lang} for the target language.</span>
+    </div>
+    <div class="ai-dlg-actions">
+      <button class="btn primary" id="aiSettingsSave" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="fileIn" accept="application/pdf,.pdf" hidden>
+<input type="file" id="atFileIn" hidden>
+
+<script src="vendor/pdfjs/pdf.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'"></script>
+<script src="vendor/pdfjs/pdf.worker.min.js" onload="window.__pdfWorkerLocal=true" onerror="this.onerror=null;window.__pdfWorkerLocal=false;this.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'"></script>
+<script src="vendor/pdflib/pdf-lib.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js'"></script>
+<script src="vendor/tesseract/tesseract.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js'"></script>
+<script>
+(function () {
+  'use strict';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var uid = function () { return Math.random().toString(36).slice(2, 9) || 'x' + Date.now().toString(36); };
+  var clamp = function (v, a, b) { return Math.min(b, Math.max(a, v)); };
+
+  var el = {
+    work: $('work'), viewer: $('viewer'), stage: $('stage'), hlDel: $('hlDel'),
+    empty: $('empty'), addHint: $('addHint'), toast: $('toast'),
+    docName: $('docName'), pageIn: $('pageIn'), pageOf: $('pageOf'), saveState: $('saveState'),
+    prev: $('prevBtn'), next: $('nextBtn'), zoomIn: $('zoomIn'), zoomOut: $('zoomOut'), zoomFit: $('zoomFit'),
+    hlBtn: $('hlBtn'), swatches: $('swatches'), hlSizeWrap: $('hlSizeWrap'), hlSizeRange: $('hlSizeRange'),
+    hlFreeOcrChk: $('hlFreeOcrChk'),
+    drawBtn: $('drawBtn'), drawSwatches: $('drawSwatches'), drawSizeWrap: $('drawSizeWrap'), drawSizeRange: $('drawSizeRange'),
+    cmtBtn: $('cmtBtn'),
+    cmtEditor: $('cmtEditor'), cmtBold: $('cmtBold'), cmtBoldUl: $('cmtBoldUl'), cmtSizePt: $('cmtSizePt'), cmtBg: $('cmtBg'), cmtFont: $('cmtFont'), cmtSize: $('cmtSize'),
+    cmtPanel: $('cmtPanel'), cmtResize: $('cmtResize'), cmtToolbarToggle: $('cmtToolbarToggle'),
+    toolbarToggle: $('toolbarToggle'),
+    cmtDelete: $('cmtDelete'), cmtSave: $('cmtSave'),
+    undoBtn: $('undoBtn'), redoBtn: $('redoBtn'), exportBtn: $('exportBtn'),
+    fileIn: $('fileIn'),
+    ocrBtn: $('ocrBtn'), erBtn: $('erBtn'),
+    atBtn: $('atBtn'), atFileIn: $('atFileIn'), atPop: $('atPop'),
+    atPopName: $('atPopName'), atPopSize: $('atPopSize'), atPopOpen: $('atPopOpen'), atPopDelete: $('atPopDelete'),
+    aiSettingsBtn: $('aiSettingsBtn'), aiMenu: $('aiMenu'), aiMenuTranslate: $('aiMenuTranslate'), aiMenuSettings: $('aiMenuSettings'),
+    aiBackdrop: $('aiBackdrop'),
+    aiResultModal: $('aiResultModal'), aiResultTitle: $('aiResultTitle'), aiResultBody: $('aiResultBody'), aiResultSrc: $('aiResultSrc'), aiResultClose: $('aiResultClose'),
+    aiSettingsModal: $('aiSettingsModal'), aiSettingsClose: $('aiSettingsClose'), aiApiKey: $('aiApiKey'), aiModel: $('aiModel'), aiLang: $('aiLang'), aiPrompt: $('aiPrompt'), aiSettingsSave: $('aiSettingsSave')
+  };
+
+  var state = { doc: null, page: 1, zoom: 1, data: { pages: {} }, tool: 'none', highlightColor: 'yellow', highlightSize: 1, drawColor: 'red', drawSize: 4, freeOcrHighlight: false };
+  var FREE_OCR_KEY = 'pdfEditor.freeOcrHighlight';
+  (function () {
+    try { state.freeOcrHighlight = localStorage.getItem(FREE_OCR_KEY) === '1'; } catch (e) { /* ignore */ }
+    if (el.hlFreeOcrChk) el.hlFreeOcrChk.checked = state.freeOcrHighlight;
+  })();
+  var DRAW_REF_W = 800; // reference page width (css px) the "pen size" slider is calibrated against, so strokes scale with zoom like everything else
+  // `pages` holds one entry per PDF page, built when a document is opened, so the
+  // whole document can be laid out as a continuous vertical scroll (like a
+  // browser's built-in PDF viewer) instead of showing a single page at a time.
+  var pages = [], pageObserver = null, repaintTimer = null, scrollRAF = null;
+  var caps = { downloads: null };
+  var undoStack = [], redoStack = [];
+
+  /* ------------------------------------------------------------------ *
+   *  Capabilities (optional): file saving for PDF export
+   * ------------------------------------------------------------------ */
+  function getCap(name) {
+    try {
+      if (window.claude && typeof window.claude.use === 'function') return window.claude.use(name).catch(function () { return null; });
+    } catch (e) { /* ignore */ }
+    return Promise.resolve(null);
+  }
+  getCap('downloads').then(function (d) { caps.downloads = d; });
+
+  function offerDownload(filename, data, mime) {
+    if (caps.downloads) {
+      return caps.downloads.save({ filename: filename, data: data }).then(function () {
+        toast('Saved');
+      }).catch(function (e) {
+        if (e && e.code === 'declined') return;
+        toast('Could not save the file (' + ((e && e.code) || 'error') + '). Try again.');
+      });
+    }
+    try {
+      var blob = data instanceof Blob ? data : new Blob([data], { type: mime || 'application/octet-stream' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    } catch (e) { toast('Could not save the file in this view.'); }
+    return Promise.resolve();
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Saving straight back into the file the user opened (Ctrl+S), instead
+   *  of always producing a brand-new downloaded copy. Relies on the File
+   *  System Access API (Chromium/Edge - which is what this app's own
+   *  installer launches into); browsers without it fall straight back to
+   *  the old "download a new file" behaviour, same as before.
+   * ------------------------------------------------------------------ */
+  function fsAccessSupported() {
+    return typeof window.showOpenFilePicker === 'function' && typeof window.showSaveFilePicker === 'function';
+  }
+  async function ensureWritePermission(handle) {
+    if (!handle || !handle.queryPermission) return false;
+    var opts = { mode: 'readwrite' };
+    try {
+      if ((await handle.queryPermission(opts)) === 'granted') return true;
+      if ((await handle.requestPermission(opts)) === 'granted') return true;
+    } catch (e) { /* denied, or requestPermission needs a user gesture we're not in - fall back to Save As */ }
+    return false;
+  }
+  async function writeBytesToHandle(handle, bytes) {
+    var writable = await handle.createWritable();
+    await writable.write(bytes);
+    await writable.close();
+  }
+
+  // True when this page is being served by the app's own local server
+  // (serve.ps1, via launch.vbs) rather than opened directly or hosted
+  // elsewhere. Only then can openLocally() below actually launch a
+  // native app (Word, Excel, ...) for an attachment.
+  function isLocalServer() { return location.protocol === 'http:' && location.hostname === '127.0.0.1'; }
+
+  // Sends an attachment's bytes to the local server, which saves it to a
+  // temp file and opens it with whatever app Windows has associated with
+  // that file type - the same as double-clicking it in File Explorer.
+  function openLocally(filename, bytes) {
+    var blob = bytes instanceof Blob ? bytes : new Blob([bytes]);
+    return fetch('/__open?name=' + encodeURIComponent(filename), { method: 'POST', body: blob })
+      .then(function (r) {
+        if (!r.ok) return r.text().then(function (t) { throw new Error(t || ('HTTP ' + r.status)); });
+      });
+  }
+
+  // True when this build is running as the Capacitor Android app (as
+  // opposed to a plain desktop browser). isLocalServer() above only ever
+  // recognises the Windows build's own local server (127.0.0.1), so
+  // without this check Android always fell through to a plain download -
+  // this is what lets openNatively() below actually hand the file to a
+  // native Android app instead.
+  function isCapacitorNative() {
+    return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+  }
+
+  // Writes an attachment's bytes to the app's cache directory (via the
+  // Capacitor Filesystem plugin) and hands that file to Android's native
+  // "Open with" / share sheet (via the Capacitor Share plugin), so it
+  // launches in whatever app the user picks - a PDF viewer, Word, Photos,
+  // etc. This is the Android equivalent of openLocally() above launching
+  // the file in its associated Windows app. Both plugins are accessed as
+  // window.Capacitor.Plugins.* so no bundler/import is needed - Capacitor's
+  // native bridge exposes every registered native plugin there automatically.
+  function openNatively(filename, bytes, mime) {
+    var Plugins = window.Capacitor && window.Capacitor.Plugins;
+    if (!Plugins || !Plugins.Filesystem || !Plugins.Share) {
+      return Promise.reject(new Error('The Filesystem/Share plugins are not installed in this build (run npm install, npx cap sync android, and rebuild).'));
+    }
+    var b64 = bytesToDataUrl(bytes, mime).split(',')[1];
+    var path = 'attachments/' + Date.now() + '-' + String(filename || 'file').replace(/[^\w.\- ]+/g, '_');
+    return Plugins.Filesystem.writeFile({ path: path, data: b64, directory: 'CACHE', recursive: true })
+      .then(function (res) {
+        return Plugins.Share.share({ title: filename, url: res.uri, dialogTitle: 'Open ' + filename });
+      });
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Storage
+   * ------------------------------------------------------------------ */
+  var LS = 'margin-pins:v1:';
+  // false = edits (highlights, comments, attachments) are NOT remembered by the browser: a file
+  // only shows what is actually inside the PDF, so anything not saved with "Save PDF" is gone on reopen.
+  // Set to true to bring back the old "auto-remember in this browser" behaviour.
+  var REMEMBER_EDITS = false;
+  var dirty = false;
+  var saveTimer = null;
+
+  function cleanId(v) { var s = String(v || '').replace(/[^\w-]/g, '').slice(0, 24); return s || uid(); }
+  var HL_COLORS = { yellow: 1, green: 1, pink: 1, blue: 1, orange: 1, purple: 1, teal: 1, red: 1 };
+  // Shared with PDF export/import so a highlight's color survives a round
+  // trip through a real PDF (Adobe Acrobat writes/reads the /C array on the
+  // annotation, not our swatch name).
+  var HL_RGB = {
+    // Exactly the same colours as the on-screen highlights (--hl-* in the CSS), so a saved PDF looks identical:
+    // yellow #FFE040, green #50E870, pink #FF80C0, blue #50B8FF, orange #FFB347, purple #C9A0FF, teal #40E0C8, red #FF6B6B
+    yellow: [1, 0.878, 0.251], green: [0.314, 0.91, 0.439], pink: [1, 0.502, 0.753], blue: [0.314, 0.722, 1],
+    orange: [1, 0.702, 0.278], purple: [0.788, 0.627, 1], teal: [0.251, 0.878, 0.784], red: [1, 0.42, 0.42]
+  };
+  // Solid (non-translucent) pen colours for the draw tool, matching the --hl-*-solid CSS swatches
+  // so an exported PDF's ink strokes look the same as they did on screen.
+  var DRAW_RGB = {
+    yellow: [1, 0.878, 0.157], green: [0.353, 0.902, 0.431], pink: [1, 0.431, 0.667], blue: [0.275, 0.627, 1],
+    orange: [1, 0.655, 0.2], purple: [0.725, 0.502, 1], teal: [0.176, 0.851, 0.745], red: [1, 0.322, 0.322]
+  };
+  function nearestHlColor(rgb) {
+    var best = 'yellow', bestD = Infinity;
+    Object.keys(HL_RGB).forEach(function (name) {
+      var c = HL_RGB[name];
+      var d = Math.pow(c[0] - rgb[0], 2) + Math.pow(c[1] - rgb[1], 2) + Math.pow(c[2] - rgb[2], 2);
+      if (d < bestD) { bestD = d; best = name; }
+    });
+    return best;
+  }
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  /* ------------------------------------------------------------------ *
+   *  Attachments: pinned files, stored inline as data URLs
+   * ------------------------------------------------------------------ */
+  var MAX_ATTACH_BYTES = 8 * 1024 * 1024; // 8 MB raw file size per attachment
+  var MAX_ATTACH_DATAURL_LEN = Math.ceil(MAX_ATTACH_BYTES * 1.4) + 100; // base64 overhead + data: prefix
+  var EXT_MIME = {
+    pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+    webp: 'image/webp', svg: 'image/svg+xml', txt: 'text/plain', csv: 'text/csv', json: 'application/json',
+    doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ppt: 'application/vnd.ms-powerpoint', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    zip: 'application/zip', mp3: 'audio/mpeg', mp4: 'video/mp4'
+  };
+  function guessMime(name) {
+    var m = /\.([a-z0-9]+)$/i.exec(name || '');
+    return (m && EXT_MIME[m[1].toLowerCase()]) || 'application/octet-stream';
+  }
+  function fmtBytes(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return Math.round(n / 1024) + ' KB';
+    return (n / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+  function bytesToDataUrl(bytes, mime) {
+    var bin = '', chunk = 0x8000;
+    for (var i = 0; i < bytes.length; i += chunk) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    return 'data:' + (mime || 'application/octet-stream') + ';base64,' + btoa(bin);
+  }
+  /* Strip our restricted comment-HTML subset back down to plain text, for
+   * writing into a PDF /Contents string (which has no markup). */
+  function commentHtmlToPlainText(html) {
+    var div = document.createElement('div');
+    div.innerHTML = String(html || '');
+    div.querySelectorAll('br').forEach(function (b) { b.replaceWith('\n'); });
+    div.querySelectorAll('li').forEach(function (li) {
+      var par = li.parentNode, n = 0, sib = li;
+      while ((sib = sib.previousElementSibling)) n++;
+      var start = par && par.tagName === 'OL' ? (parseInt(par.getAttribute('start'), 10) || 1) : 1;
+      var mark = par && par.tagName === 'OL' ? (start + n) + '. ' : '\u2022 ';
+      li.insertBefore(document.createTextNode(mark), li.firstChild);
+    });
+    div.querySelectorAll('div,p,li,h1,h2,h3,h4,h5,h6,blockquote').forEach(function (b) { b.appendChild(document.createTextNode('\n')); });
+    return (div.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  /* A PDF comment can only hold plain text, so the formatted (rich) version
+   * of every comment is also tucked into the PDF's hidden "custom
+   * properties" (base64 JSON, split into chunks). When the saved PDF is
+   * opened again here, each comment is matched back to its formatted
+   * version by page + text, so headings, lists and bold come back exactly. */
+  var RICH_KEY = 'RichComments';
+  function normCmtText(t) { return String(t || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+  function writeRichComments(doc) {
+    var L = window.PDFLib, info = doc.getInfoDict(), i, map = {}, total = 0;
+    for (i = 1; i <= 60; i++) { try { info.delete(L.PDFName.of(RICH_KEY + i)); } catch (e) { /* ignore */ } }
+    Object.keys(state.data.pages).forEach(function (pn) {
+      var e = state.data.pages[pn];
+      (e && e.comments || []).forEach(function (c) {
+        if (!/</.test(c.html || '')) return;             // plain text already round-trips fine
+        var t = normCmtText(commentHtmlToPlainText(c.html));
+        if (!t) return;
+        total += c.html.length;
+        (map[pn] = map[pn] || []).push({ t: t, h: c.html });
+      });
+    });
+    if (!total || total > 600000) return;
+    var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(map))));
+    for (i = 0; i * 20000 < b64.length; i++) {
+      info.set(L.PDFName.of(RICH_KEY + (i + 1)), L.PDFString.of(b64.slice(i * 20000, (i + 1) * 20000)));
+    }
+  }
+  function readRichComments(custom) {
+    try {
+      if (!custom) return {};
+      var keys = Object.keys(custom).filter(function (k) { return k.indexOf(RICH_KEY) === 0 && /^\d+$/.test(k.slice(RICH_KEY.length)); });
+      keys.sort(function (a, b) { return +a.slice(RICH_KEY.length) - +b.slice(RICH_KEY.length); });
+      if (!keys.length) return {};
+      var b64 = keys.map(function (k) { return String(custom[k]); }).join('');
+      var obj = JSON.parse(decodeURIComponent(escape(atob(b64))));
+      return obj && typeof obj === 'object' ? obj : {};
+    } catch (e) { return {}; }
+  }
+
+  /* A real PDF Highlight annotation can only describe its shape as a set of
+   * straight-edged quads (QuadPoints) - fine for a rectangular text
+   * selection, but a freehand highlight is exported as many thin rotated
+   * quads tracing the stroke, and this app's own re-import (below) only
+   * ever reads a Highlight annotation back as the single axis-aligned
+   * bounding box of its quads. For an upright rectangle that loses nothing;
+   * for a freehand stroke's many diagonal slivers it turns a smooth curve
+   * into a blocky staircase of oversized boxes. So, exactly like formatted
+   * comments above, every freehand highlight's exact original path is also
+   * tucked into the PDF's hidden custom properties (base64 JSON), one
+   * array per page with one slot per highlight on that page (null for a
+   * plain rectangular one) - the same position a highlight has in
+   * state.data.pages[n].highlights, which is also the position its
+   * Highlight annotation ends up at among the page's other Highlight
+   * annotations, since both are produced by iterating that same array in
+   * order. Re-import matches the two back up by that position, not by
+   * comparing coordinates, so it's exact regardless of rounding. */
+  var FREEHAND_KEY = 'FreehandHl';
+  function writeFreehandPaths(doc) {
+    var L = window.PDFLib, info = doc.getInfoDict(), i, map = {}, any = false, total = 0;
+    for (i = 1; i <= 60; i++) { try { info.delete(L.PDFName.of(FREEHAND_KEY + i)); } catch (e) { /* ignore */ } }
+    Object.keys(state.data.pages).forEach(function (pn) {
+      var e = state.data.pages[pn];
+      var hls = (e && e.highlights) || [];
+      if (!hls.length) return;
+      var arr = hls.map(function (h) {
+        if (!h.path || h.path.length < 2) return null;
+        any = true;
+        // Rounded to 4 decimals (1/10000 of the page) - far finer than the
+        // dedupe fingerprint below needs, but keeps the stored JSON small.
+        var flat = [];
+        h.path.forEach(function (p) { flat.push(Math.round(p.x * 10000) / 10000, Math.round(p.y * 10000) / 10000); });
+        return { p: flat, w: h.width || 0.022 };
+      });
+      total += JSON.stringify(arr).length;
+      map[pn] = arr;
+    });
+    if (!any || total > 1500000) return;
+    var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(map))));
+    for (i = 0; i * 20000 < b64.length; i++) {
+      info.set(L.PDFName.of(FREEHAND_KEY + (i + 1)), L.PDFString.of(b64.slice(i * 20000, (i + 1) * 20000)));
+    }
+  }
+  function readFreehandPaths(custom) {
+    try {
+      if (!custom) return {};
+      var keys = Object.keys(custom).filter(function (k) { return k.indexOf(FREEHAND_KEY) === 0 && /^\d+$/.test(k.slice(FREEHAND_KEY.length)); });
+      keys.sort(function (a, b) { return +a.slice(FREEHAND_KEY.length) - +b.slice(FREEHAND_KEY.length); });
+      if (!keys.length) return {};
+      var b64 = keys.map(function (k) { return String(custom[k]); }).join('');
+      var obj = JSON.parse(decodeURIComponent(escape(atob(b64))));
+      return obj && typeof obj === 'object' ? obj : {};
+    } catch (e) { return {}; }
+  }
+
+  /* Comment text is stored as a small, restricted HTML subset (bold, font
+   * family, font size) so it can round-trip through the contenteditable
+   * toolbar. Anything else — scripts, links, images, event handlers — is
+   * stripped on the way in, whether typed locally or loaded from a backup
+   * file. */
+  var CMT_TAGS = { B: 1, STRONG: 1, I: 1, EM: 1, U: 1, SPAN: 1, FONT: 1, BR: 1, DIV: 1, P: 1,
+                   H1: 1, H2: 1, H3: 1, H4: 1, H5: 1, H6: 1, OL: 1, UL: 1, LI: 1, BLOCKQUOTE: 1, SUB: 1, SUP: 1 };
+  var CMT_STYLE_PROPS = { 'font-weight': 1, 'font-style': 1, 'font-family': 1, 'font-size': 1, 'text-decoration': 1, 'text-align': 1, 'list-style-type': 1 };
+  function sanitizeStyleAttr(v) {
+    var out = [];
+    String(v || '').split(';').forEach(function (decl) {
+      var idx = decl.indexOf(':');
+      if (idx < 0) return;
+      var prop = decl.slice(0, idx).trim().toLowerCase();
+      var val = decl.slice(idx + 1).trim();
+      if (CMT_STYLE_PROPS[prop] && val && val.length < 80 && !/url\(|expression\(|javascript:/i.test(val)) out.push(prop + ':' + val);
+    });
+    return out.join(';');
+  }
+  function sanitizeCommentNode(node, out) {
+    if (node.nodeType === 3) { out.push(document.createTextNode(node.nodeValue)); return; }
+    if (node.nodeType !== 1) return;
+    var tag = node.tagName, kids = [];
+    Array.prototype.forEach.call(node.childNodes, function (ch) { sanitizeCommentNode(ch, kids); });
+    if (!CMT_TAGS[tag]) { kids.forEach(function (k) { out.push(k); }); return; }
+    var clean = document.createElement(tag);
+    var style = sanitizeStyleAttr(node.getAttribute && node.getAttribute('style'));
+    if (style) clean.setAttribute('style', style);
+    if (tag === 'FONT') {
+      var face = node.getAttribute('face');
+      if (face) clean.setAttribute('face', String(face).replace(/[^\w\s,'-]/g, '').slice(0, 60));
+      var size = node.getAttribute('size');
+      if (size && /^[1-7]$/.test(size)) clean.setAttribute('size', size);
+    }
+    if (tag === 'OL') {
+      var st = node.getAttribute('start');
+      if (st && /^\d{1,4}$/.test(st)) clean.setAttribute('start', st);
+      var ty = node.getAttribute('type');
+      if (ty && /^[1aAiI]$/.test(ty)) clean.setAttribute('type', ty);
+    }
+    kids.forEach(function (k) { clean.appendChild(k); });
+    out.push(clean);
+  }
+  function sanitizeCommentHtml(html) {
+    html = String(html || '').slice(0, 200000);
+    var doc2;
+    try { doc2 = new DOMParser().parseFromString('<div>' + html + '</div>', 'text/html'); } catch (e) { return ''; }
+    var root = doc2 && doc2.body && doc2.body.firstChild;
+    if (!root) return '';
+    var out = [];
+    Array.prototype.forEach.call(root.childNodes, function (ch) { sanitizeCommentNode(ch, out); });
+    var holder = document.createElement('div');
+    out.forEach(function (n) { holder.appendChild(n); });
+    return holder.innerHTML.slice(0, 200000);
+  }
+  function sanitize(d) {
+    var out = { pages: {} };
+    if (!d || typeof d !== 'object' || !d.pages || typeof d.pages !== 'object') return out;
+    Object.keys(d.pages).forEach(function (k) {
+      if (!/^\d+$/.test(k)) return;
+      var raw = d.pages[k], hlRaw, cmtRaw, atRaw, stRaw;
+      if (Array.isArray(raw)) { hlRaw = []; cmtRaw = []; atRaw = []; stRaw = []; }       // legacy pin-only format carries no highlights/comments/attachments/strokes
+      else if (raw && typeof raw === 'object') {
+        hlRaw = Array.isArray(raw.highlights) ? raw.highlights : [];
+        cmtRaw = Array.isArray(raw.comments) ? raw.comments : [];
+        atRaw = Array.isArray(raw.attachments) ? raw.attachments : [];
+        stRaw = Array.isArray(raw.strokes) ? raw.strokes : [];
+      }
+      else return;
+      var highlights = hlRaw.slice(0, 400).map(function (h) {
+        h = h || {};
+        var color = HL_COLORS[h.color] ? h.color : 'yellow';
+        var rects = (Array.isArray(h.rects) ? h.rects : []).slice(0, 40).map(function (r) {
+          r = r || {};
+          return { x: clamp(+r.x || 0, 0, 1), y: clamp(+r.y || 0, 0, 1), w: clamp(+r.w || 0, 0, 1), h: clamp(+r.h || 0, 0, 1) };
+        }).filter(function (r) { return r.w > 0.0005 && r.h > 0.0005; });
+        var out = { id: cleanId(h.id), color: color, rects: rects };
+        if (!rects.length && Array.isArray(h.path) && h.path.length >= 2) {
+          out.path = h.path.slice(0, 400).map(function (pt) {
+            pt = pt || {};
+            return { x: clamp(+pt.x || 0, 0, 1), y: clamp(+pt.y || 0, 0, 1) };
+          });
+          out.width = clamp(+h.width || 0.022, 0.002, 0.08);
+        }
+        return out;
+      }).filter(function (h) { return h.rects.length || (h.path && h.path.length >= 2); });
+      var comments = cmtRaw.slice(0, 200).map(function (c) {
+        c = c || {};
+        var html = sanitizeCommentHtml(c.html || c.text || '');
+        return { id: cleanId(c.id), x: clamp(+c.x || 0, 0, 1), y: clamp(+c.y || 0, 0, 1), html: html };
+      }).filter(function (c) { return c.html.replace(/<[^>]*>/g, '').trim().length > 0; });
+      var attachments = atRaw.slice(0, 60).map(function (a) {
+        a = a || {};
+        var dataUrl = typeof a.dataUrl === 'string' ? a.dataUrl : '';
+        if (!/^data:/.test(dataUrl) || dataUrl.length > MAX_ATTACH_DATAURL_LEN) dataUrl = '';
+        return {
+          id: cleanId(a.id),
+          x: clamp(+a.x || 0, 0, 1), y: clamp(+a.y || 0, 0, 1),
+          name: String(a.name || 'file').slice(0, 180),
+          mime: String(a.mime || 'application/octet-stream').slice(0, 120),
+          size: Math.max(0, +a.size || 0),
+          dataUrl: dataUrl
+        };
+      }).filter(function (a) { return a.dataUrl; });
+      var strokes = stRaw.slice(0, 400).map(function (s) {
+        s = s || {};
+        var color = HL_COLORS[s.color] ? s.color : 'red';
+        var points = (Array.isArray(s.points) ? s.points : []).slice(0, 2000).map(function (pt) {
+          pt = pt || {};
+          return { x: clamp(+pt.x || 0, 0, 1), y: clamp(+pt.y || 0, 0, 1) };
+        });
+        return { id: cleanId(s.id), color: color, size: clamp(+s.size || 0.005, 0.0005, 0.05), points: points };
+      }).filter(function (s) { return s.points.length >= 2; });
+      if (highlights.length || comments.length || attachments.length || strokes.length) out.pages[k] = { highlights: highlights, comments: comments, attachments: attachments, strokes: strokes };
+    });
+    return out;
+  }
+  function loadStored(key) {
+    if (!REMEMBER_EDITS) return null;
+    try {
+      var raw = localStorage.getItem(LS + key);
+      return raw ? sanitize(JSON.parse(raw)) : null;
+    } catch (e) { return null; }
+  }
+  function setSaveState(msg, bad) {
+    el.saveState.textContent = msg;
+    el.saveState.classList.toggle('bad', !!bad);
+  }
+  function persist() {
+    if (!state.doc || !REMEMBER_EDITS) return;
+    try {
+      localStorage.setItem(LS + state.doc.key, JSON.stringify(state.data));
+      setSaveState('Saved in this browser');
+    } catch (e) {
+      setSaveState('Not saved: browser storage is blocked. Use Save PDF to keep your notes.', true);
+    }
+  }
+  function scheduleSave() {
+    dirty = true;
+    if (!REMEMBER_EDITS) return;
+    clearTimeout(saveTimer);
+    setSaveState('Saving\u2026');
+    saveTimer = setTimeout(persist, 400);
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Undo / redo (whole-document snapshots)
+   * ------------------------------------------------------------------ */
+  function snapshot() { return JSON.stringify(state.data); }
+  function updateHistoryButtons() {
+    el.undoBtn.disabled = !undoStack.length;
+    el.redoBtn.disabled = !redoStack.length;
+  }
+  function pushHistory() {
+    if (!state.doc) return;
+    undoStack.push(snapshot());
+    if (undoStack.length > 60) undoStack.shift();
+    redoStack.length = 0;
+    updateHistoryButtons();
+  }
+  function resetHistory() { undoStack = []; redoStack = []; updateHistoryButtons(); }
+  function renderAllHighlightsAndComments() {
+    pages.forEach(function (p) { renderHighlights(p.n); renderComments(p.n); renderAttachments(p.n); });
+  }
+  function afterHistoryApplied() {
+    renderAllHighlightsAndComments();
+    persist();
+    updateHistoryButtons();
+  }
+  function undo() {
+    if (!undoStack.length) return;
+    redoStack.push(snapshot());
+    state.data = JSON.parse(undoStack.pop());
+    afterHistoryApplied();
+  }
+  function redo() {
+    if (!redoStack.length) return;
+    undoStack.push(snapshot());
+    state.data = JSON.parse(redoStack.pop());
+    afterHistoryApplied();
+  }
+  /* ------------------------------------------------------------------ *
+   *  Toast
+   * ------------------------------------------------------------------ */
+  var toastTimer = null;
+  function hideToast() { el.toast.classList.remove('show'); }
+  function toast(msg, undoFn) {
+    el.toast.replaceChildren();
+    var s = document.createElement('span');
+    s.textContent = msg;
+    el.toast.appendChild(s);
+    if (undoFn) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = 'Undo';
+      b.addEventListener('click', function () { undoFn(); hideToast(); });
+      el.toast.appendChild(b);
+    }
+    el.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, undoFn ? 7000 : 3600);
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Document sources: real PDFs (pdf.js) and a built-in sample
+   * ------------------------------------------------------------------ */
+  function pdfDoc(file) {
+    if (!window.pdfjsLib) return Promise.reject(new Error('engine'));
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = window.__pdfWorkerLocal
+      ? 'vendor/pdfjs/pdf.worker.min.js'
+      : 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    return file.arrayBuffer().then(function (buf) {
+      return window.pdfjsLib.getDocument({ data: new Uint8Array(buf.slice(0)) }).promise.then(function (pdf) {
+        return { pdf: pdf, buf: buf };
+      });
+    }).then(function (o) {
+      var pdf = o.pdf;
+      var docObj = {
+        rich: {},
+        numPages: pdf.numPages,
+        name: file.name,
+        key: file.name + '|' + file.size,
+        bytes: o.buf,
+        open: function (n) {
+          return pdf.getPage(n).then(function (page) {
+            var vp1 = page.getViewport({ scale: 1 });
+            return {
+              aspect: vp1.height / vp1.width,
+              pdfPage: page,
+              getTextContent: function () { return page.getTextContent(); },
+              render: function (canvas, cssW, dpr) {
+                var v = page.getViewport({ scale: (cssW * dpr) / vp1.width });
+                canvas.width = Math.floor(v.width);
+                canvas.height = Math.floor(v.height);
+                // annotationMode 0 = don't paint the file's own annotations into the page picture: the editor draws
+                // highlights / comments / attachments itself (so they can be erased), otherwise they'd be drawn twice
+                return page.render({ canvasContext: canvas.getContext('2d'), viewport: v, annotationMode: (window.pdfjsLib && window.pdfjsLib.AnnotationMode) ? window.pdfjsLib.AnnotationMode.DISABLE : 0 });
+              }
+            };
+          });
+        }
+      };
+      return pdf.getMetadata().then(function (m) {
+        docObj.rich = readRichComments(m && m.info && m.info.Custom);
+        docObj.freehandHl = readFreehandPaths(m && m.info && m.info.Custom);
+      }).catch(function () { /* no hidden data - comments just import as plain text */ }).then(function () { return docObj; });
+    });
+  }
+
+  function arrowOn(ctx, x1, y, x2) {
+    ctx.strokeStyle = '#1F3A5F'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y);
+    ctx.moveTo(x2 - 14, y - 10); ctx.lineTo(x2, y); ctx.lineTo(x2 - 14, y + 10); ctx.stroke();
+  }
+  function drawSlide(ctx, n) {
+    var sans = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 1280, 720);
+    ctx.fillStyle = '#1F3A5F'; ctx.fillRect(0, 0, 22, 720);
+    ctx.font = '700 58px ' + sans; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(n === 1 ? 'How cells make energy' : 'The Krebs cycle', 80, 130);
+    ctx.fillStyle = '#E4572E'; ctx.fillRect(80, 152, 120, 6);
+    var bullets = n === 1
+      ? ['Fuel in: glucose and oxygen', 'Energy out: ATP, the cell\u2019s currency', 'Three linked stages']
+      : ['Runs in the mitochondrial matrix', 'Each turn releases 2 CO\u2082', 'Captures energy as NADH and FADH\u2082'];
+    ctx.font = '400 32px ' + sans;
+    bullets.forEach(function (b, i) {
+      var y = 250 + i * 64;
+      ctx.fillStyle = '#E4572E'; ctx.beginPath(); ctx.arc(92, y - 11, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#2B2F36'; ctx.fillText(b, 116, y);
+    });
+    if (n === 1) {
+      var labels = ['Glycolysis', 'Krebs cycle', 'Electron transport'];
+      labels.forEach(function (t, i) {
+        var x = 80 + i * 390;
+        ctx.fillStyle = '#EEF2F8'; ctx.strokeStyle = '#B9C4D6'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, 500, 340, 110, 14) : ctx.rect(x, 500, 340, 110);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#1F3A5F'; ctx.font = '600 30px ' + sans; ctx.textAlign = 'center';
+        ctx.fillText(t, x + 170, 565); ctx.textAlign = 'left';
+        if (i < 2) arrowOn(ctx, x + 350, 555, x + 380);
+      });
+    } else {
+      var cx = 990, cy = 430, r = 130, names = ['Citrate', 'Isocitrate', '\u03B1-KG', 'Succinate', 'Malate', 'OAA'];
+      ctx.strokeStyle = '#B9C4D6'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+      names.forEach(function (t, i) {
+        var a = -Math.PI / 2 + i * Math.PI / 3, x = cx + r * Math.cos(a), y = cy + r * Math.sin(a);
+        ctx.fillStyle = '#EEF2F8'; ctx.strokeStyle = '#1F3A5F'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(x, y, 44, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#1F3A5F'; ctx.font = '600 16px ' + sans; ctx.textAlign = 'center'; ctx.fillText(t, x, y + 6); ctx.textAlign = 'left';
+      });
+    }
+  }
+  function sampleDoc() {
+    return {
+      numPages: 2, name: 'Sample slides: cell energy', key: '__sample__', sample: true,
+      open: function (n) {
+        return Promise.resolve({
+          aspect: 9 / 16,
+          render: function (canvas, cssW, dpr) {
+            var W = Math.round(cssW * dpr), H = Math.round(W * 9 / 16);
+            canvas.width = W; canvas.height = H;
+            var ctx = canvas.getContext('2d');
+            ctx.scale(W / 1280, H / 720);
+            drawSlide(ctx, n);
+            return { promise: Promise.resolve(), cancel: function () {} };
+          }
+        });
+      }
+    };
+  }
+  /* ------------------------------------------------------------------ *
+   *  Page display
+   * ------------------------------------------------------------------ */
+  function currentWidth() {
+    var avail = Math.max(240, el.viewer.clientWidth - (window.innerWidth <= 820 ? 24 : 48));
+    return Math.max(240, Math.min(avail, 1200) * state.zoom);
+  }
+  function applyTextLayerTransform(p) {
+    if (!p.textBaseWidth) return;
+    var w = p.wrap.clientWidth;
+    p.textLayer.style.transform = 'scale(' + (w / p.textBaseWidth) + ')';
+  }
+  function layoutOnePage(p) {
+    if (!p.aspect) return;
+    var w = currentWidth();
+    p.wrap.style.width = w + 'px';
+    p.wrap.style.height = (w * p.aspect) + 'px';
+    applyTextLayerTransform(p);
+    if (p.drawSvg) { p.drawSvg.setAttribute('viewBox', '0 0 ' + w + ' ' + (w * p.aspect)); renderDrawings(p.n); }
+    if (p.hlFreeSvg) { p.hlFreeSvg.setAttribute('viewBox', '0 0 ' + w + ' ' + (w * p.aspect)); renderFreeHighlights(p.n); }
+  }
+  function layoutAllPages() { pages.forEach(layoutOnePage); }
+
+  function paintPage(p, force) {
+    if (!p.handle) return;
+    var w = currentWidth();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dpr = Math.min(dpr, 4096 / w);
+    var key = Math.round(w) + '|' + dpr.toFixed(2);
+    if (!force && key === p.lastPaintKey) return;
+    var seq = ++p.paintSeq;
+    if (p.paintTask && p.paintTask.cancel) { try { p.paintTask.cancel(); } catch (e) { /* ignore */ } }
+    var off = document.createElement('canvas');
+    var task = p.handle.render(off, w, dpr);
+    p.paintTask = task;
+    task.promise.then(function () {
+      if (seq !== p.paintSeq) return;
+      p.canvas.width = off.width;
+      p.canvas.height = off.height;
+      p.canvas.getContext('2d').drawImage(off, 0, 0);
+      p.lastPaintKey = key;
+    }).catch(function () { /* cancelled or superseded */ });
+  }
+  function setupTextLayerPage(p) {
+    if (p.textReady) return;
+    if (!p.handle || !p.handle.pdfPage || !window.pdfjsLib || typeof window.pdfjsLib.renderTextLayer !== 'function') return;
+    p.textReady = true;
+    var pdfPage = p.handle.pdfPage;
+    var vp1 = pdfPage.getViewport({ scale: 1 });
+    p.textPromise = pdfPage.getTextContent().then(function (tc) {
+      p.textLayer.style.width = vp1.width + 'px';
+      p.textLayer.style.height = vp1.height + 'px';
+      p.textBaseWidth = vp1.width;
+      return window.pdfjsLib.renderTextLayer({ textContentSource: tc, container: p.textLayer, viewport: vp1, textDivs: [] }).promise;
+    }).then(function () {
+      applyTextLayerTransform(p);
+      restoreOcr(p);
+      if (p.n === state.page) updateToolUI();
+    }).catch(function () { p.textReady = false; });
+  }
+  // Only pages near the viewport get rasterized/text-layered; the rest stay
+  // as correctly-sized blank placeholders until they scroll into range.
+  function ensureRendered(idx, force) {
+    var p = pages[idx];
+    if (!p) return;
+    paintPage(p, force);
+    setupTextLayerPage(p);
+  }
+  function scheduleRepaintVisible(ms) {
+    clearTimeout(repaintTimer);
+    repaintTimer = setTimeout(function () {
+      pages.forEach(function (p, i) { if (p.visible) ensureRendered(i, true); });
+    }, ms);
+  }
+  function updatePager() {
+    var n = state.doc ? state.doc.numPages : 1;
+    el.pageIn.value = state.page;
+    el.pageIn.max = n;
+    el.pageOf.textContent = 'of ' + n;
+    el.prev.disabled = state.page <= 1;
+    el.next.disabled = state.page >= n;
+  }
+  function setZoom(z) {
+    state.zoom = clamp(Math.round(z * 100) / 100, 0.5, 3);
+    el.zoomFit.textContent = Math.round(state.zoom * 100) + '%';
+    layoutAllPages();
+    scheduleRepaintVisible(140);
+  }
+  function scrollToPage(n) {
+    if (!state.doc) return;
+    n = clamp(Math.round(+n) || 1, 1, state.doc.numPages);
+    var p = pages[n - 1];
+    if (window.getSelection) window.getSelection().removeAllRanges();
+    clearAllSelPreviews();
+    state.tool = 'none';
+    state.page = n;
+    updatePager();
+    updateToolUI();
+    if (p) p.wrap.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+  function updateCurrentPageFromScroll() {
+    if (!pages.length) return;
+    var vTop = el.viewer.getBoundingClientRect().top + 24;
+    var best = 1;
+    for (var i = 0; i < pages.length; i++) {
+      var r = pages[i].wrap.getBoundingClientRect();
+      if (r.top <= vTop) best = i + 1; else break;
+    }
+    if (best !== state.page) {
+      state.page = best;
+      updatePager();
+      updateToolUI();
+    }
+  }
+  function onPageIntersect(entries) {
+    entries.forEach(function (entry) {
+      var idx = +entry.target.dataset.idx;
+      var p = pages[idx];
+      if (!p) return;
+      p.visible = entry.isIntersecting;
+      if (entry.isIntersecting) ensureRendered(idx, false);
+    });
+  }
+  function makePageDom(n) {
+    var wrap = document.createElement('div');
+    wrap.className = 'page-wrap';
+    wrap.dataset.idx = n - 1;
+    wrap.dataset.pid = n;
+    var badge = document.createElement('div');
+    badge.className = 'page-num';
+    badge.textContent = 'Page ' + n;
+    var canvas = document.createElement('canvas');
+    var hlLayer = document.createElement('div'); hlLayer.className = 'hl-layer';
+    var selLayer = document.createElement('div'); selLayer.className = 'sel-layer';
+    var textLayer = document.createElement('div'); textLayer.className = 'text-layer selectable select-mode';
+    var drawLayer = document.createElement('div'); drawLayer.className = 'draw-layer';
+    var drawSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    drawSvg.setAttribute('viewBox', '0 0 1 1');
+    drawLayer.appendChild(drawSvg);
+    // Freehand highlights (used when a drag can't select real text) are
+    // appended into hlLayer itself, not drawLayer - hlLayer is the div whose
+    // mix-blend-mode:multiply is what makes the selectable-text highlight
+    // rects translucent instead of opaque. A blend mode set on a *nested*
+    // svg inside another positioned layer doesn't reliably darken the page
+    // underneath it the same way; being a direct part of hlLayer's own
+    // blended group is what keeps the image/text underneath visible.
+    var hlFreeSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    hlFreeSvg.setAttribute('viewBox', '0 0 1 1');
+    hlFreeSvg.style.position = 'absolute'; hlFreeSvg.style.inset = '0';
+    hlFreeSvg.style.width = '100%'; hlFreeSvg.style.height = '100%'; hlFreeSvg.style.display = 'block';
+    hlLayer.appendChild(hlFreeSvg);
+    var commentLayer = document.createElement('div'); commentLayer.className = 'comment-layer';
+    wrap.appendChild(canvas); wrap.appendChild(hlLayer); wrap.appendChild(selLayer);
+    wrap.appendChild(textLayer); wrap.appendChild(drawLayer); wrap.appendChild(commentLayer); wrap.appendChild(badge);
+    el.stage.appendChild(wrap);
+    return {
+      n: n, wrap: wrap, canvas: canvas, hlLayer: hlLayer, selLayer: selLayer, textLayer: textLayer,
+      drawLayer: drawLayer, drawSvg: drawSvg, hlFreeSvg: hlFreeSvg, commentLayer: commentLayer,
+      handle: null, aspect: null, textBaseWidth: null, textReady: false,
+      lastPaintKey: '', paintSeq: 0, paintTask: null, visible: false, hlFreePreview: null
+    };
+  }
+  function teardownPages() {
+    if (pageObserver) { try { pageObserver.disconnect(); } catch (e) { /* ignore */ } }
+    pageObserver = null;
+    pages = [];
+    el.stage.replaceChildren();
+  }
+  function buildPages(n, importAnnots) {
+    teardownPages();
+    for (var i = 1; i <= n; i++) pages.push(makePageDom(i));
+    pageObserver = new IntersectionObserver(onPageIntersect, { root: el.viewer, rootMargin: '1200px 0px', threshold: 0.01 });
+    pages.forEach(function (p) { pageObserver.observe(p.wrap); });
+
+    function loadOnePage(p) {
+      return state.doc.open(p.n).then(function (handle) {
+        p.handle = handle;
+        p.aspect = handle.aspect;
+        layoutOnePage(p);
+        var imp = (importAnnots && handle.pdfPage) ? importPdfAnnotations(p.n, handle.pdfPage) : Promise.resolve(0);
+        return imp.then(function (count) {
+          renderHighlights(p.n);
+          renderComments(p.n);
+          renderAttachments(p.n);
+          renderDrawings(p.n);
+          return count || 0;
+        });
+      }).catch(function () { return 0; /* leave this page blank if it can't be read */ });
+    }
+    function sum(counts) { return counts.reduce(function (a, b) { return a + (b || 0); }, 0); }
+
+    // Scanning every page for its size *and* its existing highlight/comment/
+    // attachment annotations before the document appears makes "Opening…"
+    // scale with the PDF's page count - very noticeable on longer files,
+    // especially on slower Android hardware. Instead: load only the first
+    // few pages (roughly a screenful) up front so the toast dismisses
+    // quickly and what's immediately visible is fully correct, then keep
+    // loading every remaining page in the background - the same
+    // lazy-loading principle already used above for canvas rendering via
+    // the IntersectionObserver, just applied to page-opening as well.
+    var EAGER_COUNT = Math.min(n, 3);
+    var eagerPages = pages.slice(0, EAGER_COUNT);
+    var lazyPages = pages.slice(EAGER_COUNT);
+
+    var eagerDone = Promise.all(eagerPages.map(loadOnePage)).then(sum);
+
+    eagerDone.then(function (eagerCount) {
+      if (!lazyPages.length) return;
+      Promise.all(lazyPages.map(loadOnePage)).then(function (lazyCounts) {
+        var total = eagerCount + sum(lazyCounts);
+        if (total) {
+          persist();
+          toast('Found ' + total + ' existing highlight' + (total === 1 ? '' : 's') + '/comment' + (total === 1 ? '' : 's') + ' in this PDF');
+        }
+      });
+    });
+
+    return eagerDone;
+  }
+
+  function startDoc(doc) {
+    state.doc = doc;
+    dirty = false;
+    if (!REMEMBER_EDITS && !doc.sample) { try { localStorage.removeItem(LS + doc.key); } catch (e) { /* ignore */ } }
+    var stored = loadStored(doc.key);
+    state.data = stored || { pages: {} };
+    // Real PDF highlight/comment annotations - written by Adobe Acrobat,
+    // another reader, or this app's own earlier "Save PDF" export - are
+    // (re-)imported on every open, not just the first, so a comment added
+    // in Acrobat after this app already has local notes for a file still
+    // shows up next time it's opened here. importPdfAnnotations dedupes
+    // against what's already known so nothing gets added twice.
+    var needImport = !doc.sample;
+    state.page = 1; state.zoom = 1; state.tool = 'none';
+    resetHistory();
+    el.docName.textContent = doc.name;
+    el.empty.hidden = true;
+    el.stage.hidden = false;
+    ['pageIn', 'zoomIn', 'zoomOut', 'zoomFit', 'exportBtn', 'cmtBtn', 'atBtn', 'drawBtn'].forEach(function (k) { el[k].disabled = false; });
+    el.hlBtn.disabled = !!doc.sample;
+    el.ocrBtn.disabled = !!doc.sample;
+    el.erBtn.disabled = !!doc.sample;
+    el.zoomFit.textContent = '100%';
+    updatePager();
+    setSaveState('');
+    return buildPages(doc.numPages, needImport).then(function () {
+      updateToolUI();
+      el.viewer.scrollTop = 0;
+      // Note: buildPages now loads only the first few pages before
+      // resolving (see its own comment) and finishes scanning the rest of
+      // the document's pages for existing highlights/comments in the
+      // background, showing its own "Found N…" toast once that completes.
+    });
+  }
+  function openFile(file, fileHandle) {
+    if (!file) return;
+    if (!/pdf$/i.test(file.name) && file.type !== 'application/pdf') { toast('Choose a PDF file.'); return; }
+    if (dirty && !window.confirm('You have changes that are not saved to a PDF yet. Open another file and lose them?')) return;
+    toast('Opening ' + file.name + '\u2026');
+    pdfDoc(file).then(function (doc) { doc.fileHandle = fileHandle || null; return doc; }).then(startDoc).then(hideToast).catch(function (e) {
+      var name = e && e.name;
+      if (name === 'PasswordException') toast('This PDF is password-protected. Remove the password and try again.');
+      else if (e && e.message === 'engine') toast('The PDF reader did not load. Make sure the vendor/pdfjs folder is next to this file, or connect to the internet, then reload.');
+      else toast('That file could not be read as a PDF.');
+    });
+  }
+  /* Prefers the native File System Access picker (so we come away with a
+   * writable handle to the actual file - what makes Ctrl+S able to save
+   * back into it instead of downloading a new copy). Falls back to the
+   * plain <input type="file"> picker if that API isn't available, or if
+   * the user's browser rejects/lacks it for some other reason. */
+  async function pickAndOpenFile() {
+    window.focus();
+    if (fsAccessSupported()) {
+      try {
+        var handles = await window.showOpenFilePicker({
+          multiple: false,
+          types: [{ description: 'PDF document', accept: { 'application/pdf': ['.pdf'] } }]
+        });
+        var handle = handles && handles[0];
+        if (!handle) return;
+        var canWrite = await ensureWritePermission(handle);
+        var file = await handle.getFile();
+        openFile(file, canWrite ? handle : null);
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return; // the user cancelled the picker
+        // any other failure - fall through to the classic picker below
+      }
+    }
+    el.fileIn.click();
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Scan text (OCR): makes text that is part of a picture or a scanned
+   *  page selectable / highlightable, exactly like normal PDF text.
+   *  Each recognised word becomes an invisible text span placed over the
+   *  word in the image, inside the same text layer the page already has.
+   *  Results are remembered in this browser so a file only needs scanning once.
+   * ------------------------------------------------------------------ */
+  var OCR_LANG = 'eng';            // e.g. 'eng+ben' to also read Bengali (downloads that language too)
+  var OCR_MIN_CONF = 35;
+  var ocrWorkerP = null, ocrBusy = false, ocrStop = false, ocrLogger = null;
+
+  function ocrStatus(msg) { toast(msg); clearTimeout(toastTimer); }     // stays until replaced or hidden
+  function setOcrBtn(busy) {
+    el.ocrBtn.setAttribute('aria-pressed', busy ? 'true' : 'false');
+    var l = el.ocrBtn.querySelector('.lbl'); if (l) l.textContent = busy ? 'Stop scan' : 'Scan text';
+  }
+  function getOcrWorker() {
+    if (ocrWorkerP) return ocrWorkerP;
+    if (!window.Tesseract || typeof window.Tesseract.createWorker !== 'function') return Promise.reject(new Error('ocr-engine'));
+    ocrWorkerP = window.Tesseract.createWorker(OCR_LANG, 1, {
+      workerPath: 'vendor/tesseract/worker.min.js',
+      corePath: 'vendor/tesseract-core/',   // dir containing the 4 tesseract-core*.wasm.js variants; Tesseract.js picks the right one
+      langPath: 'vendor/tessdata/',          // dir containing <lang>.traineddata.gz, e.g. vendor/tessdata/eng.traineddata.gz
+      gzip: true,
+      logger: function (m) { if (ocrLogger) ocrLogger(m); }
+    })
+      .catch(function (e) { ocrWorkerP = null; throw e; });
+    return ocrWorkerP;
+  }
+  function ocrCacheKey() { return 'pdfEditor.ocr|' + (state.doc && state.doc.key); }
+  function loadOcrCache() {
+    if (!state.doc || state.doc.sample) return {};
+    if (state.doc.ocrCache) return state.doc.ocrCache;
+    var c = {};
+    try { c = JSON.parse(localStorage.getItem(ocrCacheKey()) || '{}') || {}; } catch (e) { c = {}; }
+    state.doc.ocrCache = c;
+    return c;
+  }
+  function saveOcrCache() {
+    try { localStorage.setItem(ocrCacheKey(), JSON.stringify(state.doc.ocrCache || {})); } catch (e) { /* storage full or blocked - just rescan next time */ }
+  }
+  /* words: [{t, x0, y0, x1, y1}] - positions as fractions of the page */
+  function addOcrSpans(p, words) {
+    if (!words.length || !p.textBaseWidth) return 0;
+    var W = p.textBaseWidth, H = W * p.aspect, made = [];
+    var frag = document.createDocumentFragment();
+    words.forEach(function (w) {
+      var bw = (w.x1 - w.x0) * W, bh = (w.y1 - w.y0) * H;
+      if (!(bw > 0.5) || !(bh > 0.5)) return;
+      var sp = document.createElement('span');
+      sp.className = 'ocr';
+      sp.textContent = w.t;
+      sp.style.left = (w.x0 * W) + 'px';
+      sp.style.top = (w.y0 * H) + 'px';
+      sp.style.fontSize = bh + 'px';
+      frag.appendChild(sp);
+      made.push({ sp: sp, bw: bw });
+    });
+    p.textLayer.appendChild(frag);
+    made.forEach(function (m) {                       // stretch each word to exactly cover the word in the image
+      var nat = m.sp.offsetWidth;
+      if (nat > 0) m.sp.style.transform = 'scaleX(' + (m.bw / nat) + ')';
+    });
+    return made.length;
+  }
+  function restoreOcr(p) {
+    if (p.ocrDone || !state.doc || state.doc.sample) return;
+    var list = loadOcrCache()[String(p.n)];
+    if (!Array.isArray(list) || !list.length) return;
+    var words = list.map(function (a) { return { t: String(a[0]), x0: +a[1], y0: +a[2], x1: +a[3], y1: +a[4] }; });
+    p.ocrDone = true;
+    addOcrSpans(p, words);
+  }
+  function ocrLinesFrom(data) {
+    var lines = [];
+    if (data && Array.isArray(data.lines) && data.lines.length) lines = data.lines;
+    else ((data && data.blocks) || []).forEach(function (b) {
+      (b.paragraphs || []).forEach(function (pa) { (pa.lines || []).forEach(function (l) { lines.push(l); }); });
+    });
+    if (lines.length) return lines;
+    // last resort: treat every word as its own line
+    return ((data && data.words) || []).map(function (w) { return { bbox: w.bbox, words: [w] }; });
+  }
+  async function ocrPage(p, worker) {
+    if (p.ocrDone || !p.handle || !p.handle.pdfPage) return 0;
+    setupTextLayerPage(p);
+    if (p.textPromise) await p.textPromise;
+    var vp1 = p.handle.pdfPage.getViewport({ scale: 1 });
+    if (!p.textBaseWidth) {
+      p.textLayer.style.width = vp1.width + 'px';
+      p.textLayer.style.height = vp1.height + 'px';
+      p.textBaseWidth = vp1.width;
+      applyTextLayerTransform(p);
+    }
+    var scale = Math.min(4, Math.max(1.5, 2200 / vp1.width));
+    var cv = document.createElement('canvas');
+    await p.handle.render(cv, vp1.width * scale, 1).promise;
+    var res = await worker.recognize(cv, {}, { blocks: true });
+    var cw = cv.width, ch = cv.height;
+
+    // text the PDF already has as real text - don't double it up
+    var wr = p.wrap.getBoundingClientRect();
+    var native = Array.prototype.map.call(p.textLayer.querySelectorAll('span:not(.ocr)'), function (sp) {
+      var r = sp.getBoundingClientRect();
+      return { x0: (r.left - wr.left) / wr.width, y0: (r.top - wr.top) / wr.height, x1: (r.right - wr.left) / wr.width, y1: (r.bottom - wr.top) / wr.height };
+    }).filter(function (r) { return r.x1 > r.x0 && r.y1 > r.y0; });
+    function coveredByRealText(b) {
+      var area = (b.x1 - b.x0) * (b.y1 - b.y0), hit = 0;
+      if (area <= 0) return true;
+      for (var i = 0; i < native.length; i++) {
+        var n = native[i];
+        var iw = Math.min(b.x1, n.x1) - Math.max(b.x0, n.x0), ih = Math.min(b.y1, n.y1) - Math.max(b.y0, n.y0);
+        if (iw > 0 && ih > 0) hit += iw * ih;
+      }
+      return hit / area > 0.35;
+    }
+
+    var words = [];
+    ocrLinesFrom(res && res.data).forEach(function (ln) {
+      var lb = ln.bbox || null;
+      (ln.words || []).forEach(function (w) {
+        var txt = String(w.text || '').trim();
+        if (!txt || !w.bbox || (typeof w.confidence === 'number' && w.confidence < OCR_MIN_CONF)) return;
+        var b = {
+          x0: clamp(w.bbox.x0 / cw, 0, 1), x1: clamp(w.bbox.x1 / cw, 0, 1),
+          y0: clamp((lb ? lb.y0 : w.bbox.y0) / ch, 0, 1), y1: clamp((lb ? lb.y1 : w.bbox.y1) / ch, 0, 1)   // same height for every word on a line
+        };
+        if (coveredByRealText(b)) return;
+        words.push({ t: txt, x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1 });
+      });
+    });
+    p.ocrDone = true;
+    var cache = loadOcrCache();
+    cache[String(p.n)] = words.map(function (w) { return [w.t, +w.x0.toFixed(4), +w.y0.toFixed(4), +w.x1.toFixed(4), +w.y1.toFixed(4)]; });
+    saveOcrCache();
+    return addOcrSpans(p, words);
+  }
+  async function runOcr() {
+    if (!state.doc || state.doc.sample) return;
+    if (ocrBusy) { ocrStop = true; ocrStatus('Stopping after this page\u2026'); return; }
+    if (!window.Tesseract) { toast('The text recognition engine did not load. Run the vendor download script once so vendor/tesseract is next to this file, then reload.'); return; }
+    var start = Math.max(0, state.page - 1);
+    var order = pages.slice(start).concat(pages.slice(0, start)).filter(function (p) { return !p.ocrDone; });
+    if (!order.length) { toast('Text in the images on every page is already selectable.'); return; }
+    ocrBusy = true; ocrStop = false; setOcrBtn(true);
+    var found = 0, doneCount = 0, stopped = false;
+    try {
+      ocrStatus('Loading the text reader\u2026 (the first time it downloads about 10 MB)');
+      var worker = await getOcrWorker();
+      for (var i = 0; i < order.length; i++) {
+        if (ocrStop) { stopped = true; break; }
+        var pg = order[i];
+        var label = 'Scanning page ' + pg.n + ' (' + (i + 1) + ' of ' + order.length + ')';
+        ocrStatus(label + '\u2026');
+        ocrLogger = function (m) { if (m && m.status === 'recognizing text' && typeof m.progress === 'number') ocrStatus(label + ' ' + Math.round(m.progress * 100) + '%'); };
+        found += await ocrPage(pg, worker);
+        doneCount++;
+      }
+      ocrLogger = null;
+      if (stopped) ocrStatus('Stopped. ' + doneCount + ' page' + (doneCount === 1 ? '' : 's') + ' scanned.');
+      else ocrStatus(found ? 'Done - text in images is now selectable. Use Highlight and drag over it.' : 'Done - no extra text was found in the images.');
+      setTimeout(function () { if (!ocrBusy) hideToast(); }, 5000);
+    } catch (e) {
+      console.error(e);
+      var reason = (e && e.message) ? e.message : String(e);
+      ocrStatus('Could not scan the text (' + reason + '). If this keeps happening, reload the app from its Start Menu/Desktop shortcut.');
+      setTimeout(hideToast, 6000);
+    } finally {
+      ocrBusy = false; ocrLogger = null; setOcrBtn(false);
+    }
+  }
+  el.ocrBtn.addEventListener('click', runOcr);
+
+  /* Toolbar size: the whole top bar can be made smaller or larger (remembered in this browser) */
+  var BAR_SIZES = [0.6, 0.7, 0.8, 0.9, 1, 1.15, 1.3, 1.5];
+  var BAR_KEY = 'pdfEditor.toolbarSize', barIdx = 4;
+  function applyBarSize(i, announce) {
+    barIdx = Math.max(0, Math.min(BAR_SIZES.length - 1, i));
+    document.documentElement.style.setProperty('--bar-zoom', String(BAR_SIZES[barIdx]));
+    $('barSmaller').disabled = barIdx === 0;
+    $('barLarger').disabled = barIdx === BAR_SIZES.length - 1;
+    try { localStorage.setItem(BAR_KEY, String(barIdx)); } catch (e) { /* ignore */ }
+    if (announce) toast('Toolbar size: ' + Math.round(BAR_SIZES[barIdx] * 100) + '%');
+  }
+  $('barSmaller').addEventListener('click', function () { applyBarSize(barIdx - 1, true); });
+  $('barLarger').addEventListener('click', function () { applyBarSize(barIdx + 1, true); });
+  (function () {
+    var saved = 4;
+    try { var v = parseInt(localStorage.getItem(BAR_KEY), 10); if (v >= 0 && v < BAR_SIZES.length) saved = v; } catch (e) { /* ignore */ }
+    applyBarSize(saved, false);
+  })();
+
+  /* Hide the whole top toolbar to read the page full-screen. The toggle
+     button itself stays fixed on screen (outside .bar) so it's still
+     reachable once the toolbar is gone; tapping it again brings the
+     toolbar straight back. Remembered per device like the toolbar size. */
+  var TOOLBAR_HIDE_KEY = 'pdfEditor.toolbarHidden';
+  var EYE_SVG = '<path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/>';
+  var EYE_OFF_SVG = '<path d="M2 2l12 12"/><path d="M6.4 6.6a2 2 0 0 0 2.9 2.9"/><path d="M4 4.4C2.4 5.5 1 8 1 8s2.5 5 7 5c1 0 1.9-.2 2.7-.6"/><path d="M9.8 3.3C9.2 3.1 8.6 3 8 3c-3 0-5.2 1.9-6.4 3.3"/><path d="M13 5.4c1 1 2 2.6 2 2.6s-.6 1.2-1.7 2.4"/>';
+  function setToolbarHidden(h) {
+    document.body.classList.toggle('toolbar-hidden', h);
+    el.toolbarToggle.setAttribute('aria-pressed', h ? 'true' : 'false');
+    el.toolbarToggle.title = h ? 'Show toolbar' : 'Hide toolbar';
+    el.toolbarToggle.setAttribute('aria-label', h ? 'Show toolbar' : 'Hide toolbar');
+    $('toolbarToggleIcon').innerHTML = h ? EYE_OFF_SVG : EYE_SVG;
+    try { localStorage.setItem(TOOLBAR_HIDE_KEY, h ? '1' : '0'); } catch (e) { /* ignore */ }
+  }
+  el.toolbarToggle.addEventListener('click', function () { setToolbarHidden(!document.body.classList.contains('toolbar-hidden')); });
+  (function () {
+    var saved = false;
+    try { saved = localStorage.getItem(TOOLBAR_HIDE_KEY) === '1'; } catch (e) { /* ignore */ }
+    setToolbarHidden(saved);
+  })();
+
+  /* ------------------------------------------------------------------ *
+   *  Tools: highlighting
+   * ------------------------------------------------------------------ */
+  function updateToolUI() {
+    var cur = pages[state.page - 1];
+    var canHighlight = !!(cur && cur.handle && cur.handle.pdfPage);
+    el.hlBtn.setAttribute('aria-pressed', state.tool === 'highlight' ? 'true' : 'false');
+    el.drawBtn.setAttribute('aria-pressed', state.tool === 'draw' ? 'true' : 'false');
+    el.cmtBtn.setAttribute('aria-pressed', state.tool === 'comment' ? 'true' : 'false');
+    el.atBtn.setAttribute('aria-pressed', state.tool === 'attach' ? 'true' : 'false');
+    el.erBtn.setAttribute('aria-pressed', state.tool === 'erase' ? 'true' : 'false');
+    el.stage.classList.toggle('erasing', state.tool === 'erase');
+    el.stage.classList.toggle('drawing', state.tool === 'draw');
+    el.stage.classList.toggle('highlighting', state.tool === 'highlight');
+    if (state.tool !== 'erase') hideEraserRing();
+    if (state.tool !== 'highlight') hlRing.style.display = 'none';
+    el.swatches.hidden = state.tool !== 'highlight';
+    el.hlSizeWrap.hidden = state.tool !== 'highlight';
+    el.drawSwatches.hidden = state.tool !== 'draw';
+    el.drawSizeWrap.hidden = state.tool !== 'draw';
+    pages.forEach(function (p) { p.commentLayer.classList.toggle('placing', state.tool === 'comment' || state.tool === 'attach'); });
+    if (state.tool === 'highlight' && !canHighlight) {
+      el.addHint.hidden = false;
+      el.addHint.textContent = 'This page has no selectable text to highlight.';
+    } else {
+      el.addHint.hidden = true;
+    }
+  }
+  function setTool(t) {
+    if (t === 'highlight') {
+      var cur = pages[state.page - 1];
+      if (!(cur && cur.handle && cur.handle.pdfPage)) {
+        toast('Open a real PDF to highlight text \u2014 the sample slides have no selectable text.');
+        t = 'none';
+      }
+    }
+    state.tool = (state.tool === t) ? 'none' : t;
+    if (window.getSelection) window.getSelection().removeAllRanges();
+    updateToolUI();
+  }
+  el.hlBtn.addEventListener('click', function () { setTool('highlight'); });
+  el.drawBtn.addEventListener('click', function () { setTool('draw'); });
+  el.cmtBtn.addEventListener('click', function () { setTool('comment'); });
+  el.atBtn.addEventListener('click', function () { setTool('attach'); });
+  el.erBtn.addEventListener('click', function () { setTool('erase'); });
+  el.swatches.querySelectorAll('.swatch').forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.highlightColor = b.dataset.c;
+      el.swatches.querySelectorAll('.swatch').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    });
+  });
+  el.hlSizeRange.addEventListener('input', function () { state.highlightSize = clamp((+el.hlSizeRange.value || 100) / 100, 0.5, 2); });
+  if (el.hlFreeOcrChk) el.hlFreeOcrChk.addEventListener('change', function () {
+    state.freeOcrHighlight = !!el.hlFreeOcrChk.checked;
+    try { localStorage.setItem(FREE_OCR_KEY, state.freeOcrHighlight ? '1' : '0'); } catch (e) { /* ignore */ }
+  });
+  el.drawSwatches.querySelectorAll('.swatch').forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.drawColor = b.dataset.c;
+      el.drawSwatches.querySelectorAll('.swatch').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    });
+  });
+  el.drawSizeRange.addEventListener('input', function () { state.drawSize = clamp(+el.drawSizeRange.value || 4, 1, 40); });
+
+  /* ------------------------------------------------------------------ *
+   *  Highlights
+   * ------------------------------------------------------------------ */
+  function pageEntry(n, create) {
+    var k = String(n);
+    var e = state.data.pages[k];
+    if (!e) {
+      if (!create) return null;
+      e = state.data.pages[k] = { highlights: [], comments: [], attachments: [], strokes: [] };
+    }
+    if (!e.highlights) e.highlights = [];
+    if (!e.comments) e.comments = [];               // legacy entries saved before comments existed
+    if (!e.attachments) e.attachments = [];          // legacy entries saved before attachments existed
+    if (!e.strokes) e.strokes = [];                  // legacy entries saved before the draw tool existed
+    return e;
+  }
+  function highlightsOnPage(n, create) { var e = pageEntry(n, create); return e ? e.highlights : []; }
+  function commentsOnPage(n, create) { var e = pageEntry(n, create); return e ? e.comments : []; }
+  function attachmentsOnPage(n, create) { var e = pageEntry(n, create); return e ? e.attachments : []; }
+  function strokesOnPage(n, create) { var e = pageEntry(n, create); return e ? e.strokes : []; }
+  function hlColorVar(c) { return 'var(--hl-' + c + ')'; }
+
+  /* Fingerprints used to dedupe imported PDF annotations against ones this
+   * app already knows about (its own earlier import, or notes made in this
+   * app and then round-tripped through "Save PDF"), so import can safely
+   * run on every open instead of only the first one. */
+  function fpHighlight(h) {
+    if (h.path && h.path.length) {
+      return h.color + '|p|' + h.path.map(function (pt) { return [pt.x, pt.y].map(function (v) { return Math.round(v * 2000); }).join(','); }).join(';');
+    }
+    return h.color + '|' + h.rects.map(function (r) {
+      return [r.x, r.y, r.w, r.h].map(function (v) { return Math.round(v * 2000); }).join(',');
+    }).join(';');
+  }
+  function fpComment(c) {
+    return Math.round(c.x * 500) + ',' + Math.round(c.y * 500) + '|' + commentHtmlToPlainText(c.html).trim().toLowerCase();
+  }
+  function fpAttachment(a) {
+    return Math.round(a.x * 500) + ',' + Math.round(a.y * 500) + '|' + a.name.toLowerCase() + '|' + a.size;
+  }
+
+  /* Reads real PDF markup annotations (Highlight and Text/sticky-note,
+   * whichever reader wrote them - Adobe Acrobat, this app's own "Save PDF"
+   * export, etc.) straight from the opened file via pdf.js, so a PDF that
+   * has comments/highlights on disk shows them here even if this app has
+   * never seen them before. Runs every time a real PDF is opened (not just
+   * the first time) so a comment added later in Acrobat, to a file this
+   * app already has local notes for, still shows up on the next open -
+   * anything already known (matched by a rounded position+content
+   * fingerprint) is skipped so nothing gets duplicated. */
+  function importPdfAnnotations(n, pdfPage) {
+    return pdfPage.getAnnotations({ intent: 'display' }).then(function (annots) {
+      var vp = pdfPage.getViewport({ scale: 1 });
+      var w = vp.width, h = vp.height;
+      if (!w || !h) return 0;
+      var hl = [], cm = [], at = [];
+      var freehandArr = (state.doc && state.doc.freehandHl && state.doc.freehandHl[String(n)]) || [];
+      var hlIndex = -1;
+      (annots || []).forEach(function (a) {
+        if (a.subtype === 'Highlight' && Array.isArray(a.quadPoints) && a.quadPoints.length) {
+          hlIndex++;
+          // If this Highlight annotation's exact original freehand path was
+          // stashed at export time, use it verbatim - it's the same shape
+          // that showed on screen before saving, not the blocky
+          // bounding-box-per-quad reconstruction below. Position, not
+          // coordinates, is what ties the two together (see the comment
+          // above writeFreehandPaths).
+          var stashed = freehandArr[hlIndex];
+          if (stashed && Array.isArray(stashed.p) && stashed.p.length >= 4) {
+            var path = [];
+            for (var pi = 0; pi + 1 < stashed.p.length; pi += 2) path.push({ x: stashed.p[pi], y: stashed.p[pi + 1] });
+            hl.push({
+              id: uid(),
+              color: (a.color && a.color.length === 3) ? nearestHlColor([a.color[0] / 255, a.color[1] / 255, a.color[2] / 255]) : 'yellow',
+              rects: [], path: path, width: stashed.w || 0.022
+            });
+            return;
+          }
+          // pdf.js gives quadPoints as one array per quad of {x,y} points
+          // (top-left, top-right, bottom-left, bottom-right), already in
+          // PDF page-coordinate space - not the flat 8-number-per-quad
+          // layout the raw /QuadPoints array uses on disk.
+          var rects = [];
+          a.quadPoints.forEach(function (quad) {
+            if (!Array.isArray(quad) || quad.length < 4) return;
+            var xs = quad.map(function (p) { return p.x; });
+            var ys = quad.map(function (p) { return p.y; });
+            var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+            var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+            rects.push({ x: clamp(x0 / w, 0, 1), y: clamp(1 - y1 / h, 0, 1), w: clamp((x1 - x0) / w, 0, 1), h: clamp((y1 - y0) / h, 0, 1) });
+          });
+          rects = rects.filter(function (r) { return r.w > 0.0005 && r.h > 0.0005; });
+          if (rects.length) hl.push({ id: uid(), color: (a.color && a.color.length === 3) ? nearestHlColor([a.color[0] / 255, a.color[1] / 255, a.color[2] / 255]) : 'yellow', rects: rects });
+        } else if ((a.subtype === 'Text' || a.subtype === 'FreeText') && Array.isArray(a.rect) && a.rect.length === 4) {
+          // pdf.js exposes the annotation's text as contentsObj.str, not a
+          // plain "contents" string.
+          var text = String((a.contentsObj && a.contentsObj.str) || '').trim();
+          if (!text) return;
+          var rx0 = a.rect[0], ry0 = a.rect[1], rx1 = a.rect[2], ry1 = a.rect[3];
+          var px = ((rx0 + rx1) / 2) / w, py = 1 - (Math.max(ry0, ry1) / h);
+          // PDF text strings may use CR ("\r"), LF ("\n"), or CRLF ("\r\n")
+          // as the line separator (PDF 32000-1, 7.9.2.2) - Acrobat itself
+          // writes "\r" for line breaks in annotation Contents. Matching on
+          // "\n" alone silently drops every break from an Acrobat-authored
+          // comment, collapsing it into one paragraph.
+          var cmHtml = escapeHtml(text).replace(/\r\n|\r|\n/g, '<br>');
+          var richList = state.doc && state.doc.rich && state.doc.rich[String(n)];
+          if (Array.isArray(richList)) {
+            var nt = normCmtText(text);
+            for (var ri = 0; ri < richList.length; ri++) {
+              if (richList[ri] && !richList[ri].used && richList[ri].t === nt) {
+                richList[ri].used = true;
+                var rh = sanitizeCommentHtml(richList[ri].h);
+                if (rh) cmHtml = rh;
+                break;
+              }
+            }
+          }
+          cm.push({ id: uid(), x: clamp(px, 0, 1), y: clamp(py, 0, 1), html: cmHtml });
+        } else if (a.subtype === 'FileAttachment' && a.file && a.file.content && Array.isArray(a.rect) && a.rect.length === 4) {
+          var content = a.file.content instanceof Uint8Array ? a.file.content : new Uint8Array(a.file.content);
+          if (content.length && content.length <= MAX_ATTACH_BYTES) {
+            var fname = String(a.file.filename || 'file').split(/[\\/]/).pop().slice(0, 180);
+            var mime = guessMime(fname);
+            var arx0 = a.rect[0], ary0 = a.rect[1], arx1 = a.rect[2], ary1 = a.rect[3];
+            var apx = ((arx0 + arx1) / 2) / w, apy = 1 - (Math.max(ary0, ary1) / h);
+            at.push({ id: uid(), x: clamp(apx, 0, 1), y: clamp(apy, 0, 1), name: fname, mime: mime, size: content.length, dataUrl: bytesToDataUrl(content, mime) });
+          }
+        }
+      });
+      if (!hl.length && !cm.length && !at.length) return 0;
+      var existing = pageEntry(n, false);
+      var seenHl = {}, seenCm = {}, seenAt = {};
+      if (existing) {
+        existing.highlights.forEach(function (h) { seenHl[fpHighlight(h)] = 1; });
+        existing.comments.forEach(function (c) { seenCm[fpComment(c)] = 1; });
+        existing.attachments.forEach(function (a) { seenAt[fpAttachment(a)] = 1; });
+      }
+      var newHl = hl.filter(function (h) { var k = fpHighlight(h); if (seenHl[k]) return false; seenHl[k] = 1; return true; });
+      var newCm = cm.filter(function (c) { var k = fpComment(c); if (seenCm[k]) return false; seenCm[k] = 1; return true; });
+      var newAt = at.filter(function (a) { var k = fpAttachment(a); if (seenAt[k]) return false; seenAt[k] = 1; return true; });
+      if (newHl.length || newCm.length || newAt.length) {
+        var e = pageEntry(n, true);
+        newHl.forEach(function (h) { e.highlights.push(h); });
+        newCm.forEach(function (c) { e.comments.push(c); });
+        newAt.forEach(function (a) { e.attachments.push(a); });
+      }
+      return newHl.length + newCm.length + newAt.length;
+    }).catch(function () { return 0; });
+  }
+  function renderHighlights(n) {
+    var p = pages[n - 1];
+    if (!p) return;
+    p.hlLayer.querySelectorAll('.hl-rect').forEach(function (node) { node.remove(); });
+    el.hlDel.classList.remove('show');
+    highlightsOnPage(n).forEach(function (h) {
+      h.rects.forEach(function (r) {
+        var d = document.createElement('div');
+        d.className = 'hl-rect';
+        d.style.left = (r.x * 100) + '%';
+        d.style.top = (r.y * 100) + '%';
+        d.style.width = (r.w * 100) + '%';
+        d.style.height = (r.h * 100) + '%';
+        d.style.background = hlColorVar(h.color);
+        d.dataset.hid = h.id;
+        d.dataset.pid = n;
+        p.hlLayer.appendChild(d);
+      });
+    });
+    renderFreeHighlights(n);
+  }
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  /* Freehand pen strokes are stored as points that are fractions (0-1) of the
+   * page's width/height, exactly like highlight rects, so they stay correctly
+   * placed and correctly scaled no matter the zoom level or window size. */
+  function renderDrawings(n) {
+    var p = pages[n - 1];
+    if (!p || !p.drawSvg) return;
+    var w = currentWidth(), h = w * (p.aspect || 1);
+    while (p.drawSvg.firstChild) p.drawSvg.removeChild(p.drawSvg.firstChild);
+    strokesOnPage(n).forEach(function (s) {
+      if (!s.points || s.points.length < 2) return;
+      var d = 'M ' + (s.points[0].x * w).toFixed(1) + ' ' + (s.points[0].y * h).toFixed(1);
+      for (var i = 1; i < s.points.length; i++) d += ' L ' + (s.points[i].x * w).toFixed(1) + ' ' + (s.points[i].y * h).toFixed(1);
+      var path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      path.style.stroke = 'var(--hl-' + s.color + '-solid)';
+      path.style.strokeWidth = Math.max(1, s.size * w) + 'px';
+      path.dataset.sid = s.id;
+      p.drawSvg.appendChild(path);
+    });
+  }
+  /* Freehand highlights - the fallback used when a drag doesn't land on
+   * selectable text - are stored as a path of fractional points (like pen
+   * strokes) plus a thickness, and drawn as one thick translucent line so
+   * they read as a highlighter mark rather than a pen line. Uses the same
+   * hover/click-to-delete behaviour as the rectangle highlights (shares the
+   * "hl-rect" class and the pid/hid dataset the delete button reads). */
+  function renderFreeHighlights(n) {
+    var p = pages[n - 1];
+    if (!p || !p.hlFreeSvg) return;
+    var w = currentWidth(), h = w * (p.aspect || 1);
+    while (p.hlFreeSvg.firstChild) p.hlFreeSvg.removeChild(p.hlFreeSvg.firstChild);
+    highlightsOnPage(n).forEach(function (hh) {
+      if (!hh.path || hh.path.length < 2) return;
+      var d = 'M ' + (hh.path[0].x * w).toFixed(1) + ' ' + (hh.path[0].y * h).toFixed(1);
+      for (var i = 1; i < hh.path.length; i++) d += ' L ' + (hh.path[i].x * w).toFixed(1) + ' ' + (hh.path[i].y * h).toFixed(1);
+      var path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      path.setAttribute('class', 'hl-rect');
+      path.style.stroke = hlColorVar(hh.color);
+      path.style.strokeWidth = Math.max(2, (hh.width || 0.022) * w) + 'px';
+      path.style.pointerEvents = 'stroke';
+      path.dataset.hid = hh.id;
+      path.dataset.pid = n;
+      p.hlFreeSvg.appendChild(path);
+    });
+  }
+  /* Live preview of a freehand highlight drag (used on content that isn't
+   * real selectable text - an un-OCR'd part, or an OCR'd part while
+   * "Free-draw on OCR text" is on). Without this, nothing visibly grows
+   * under the cursor while the drag is in progress; the highlight only
+   * appeared once the drag ended. This mirrors that same stroke live,
+   * using the drag's raw points (unsnapped - snapping only happens once,
+   * for the final committed highlight, in commitFreehandHighlight). */
+  function renderFreehandDragPreview(drag) {
+    var p = pages[drag.pid - 1];
+    if (!p || !p.hlFreeSvg || drag.pts.length < 2) return;
+    var w = currentWidth(), h = w * (p.aspect || 1);
+    if (!p.hlFreePreview) {
+      var path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      path.style.pointerEvents = 'none';
+      p.hlFreeSvg.appendChild(path);
+      p.hlFreePreview = path;
+    }
+    var pts = drag.pts;
+    var d = 'M ' + (pts[0].x * w).toFixed(1) + ' ' + (pts[0].y * h).toFixed(1);
+    for (var i = 1; i < pts.length; i++) d += ' L ' + (pts[i].x * w).toFixed(1) + ' ' + (pts[i].y * h).toFixed(1);
+    p.hlFreePreview.setAttribute('d', d);
+    p.hlFreePreview.style.stroke = hlColorVar(state.highlightColor);
+    p.hlFreePreview.style.strokeWidth = Math.max(2, clamp(HL_FREE_BASE_WIDTH * state.highlightSize, 0.006, 0.05) * w) + 'px';
+  }
+  function clearFreehandDragPreview(pid) {
+    var p = pages[pid - 1];
+    if (p && p.hlFreePreview) { p.hlFreePreview.remove(); p.hlFreePreview = null; }
+  }
+  function deleteHighlight(pid, id) {
+    var e = pageEntry(pid);
+    if (!e || !e.highlights.length) return;
+    pushHistory();
+    e.highlights = e.highlights.filter(function (h) { return h.id !== id; });
+    el.hlDel.classList.remove('show');
+    scheduleSave();
+    renderHighlights(pid);
+    toast('Highlight removed', undo);
+  }
+  var hlHideTimer = null;
+  function showHlDel(rectEl) {
+    clearTimeout(hlHideTimer);
+    var rb = rectEl.getBoundingClientRect();
+    el.hlDel.style.left = Math.max(2, rb.right - 10) + 'px';
+    el.hlDel.style.top = Math.max(2, rb.top - 10) + 'px';
+    el.hlDel.dataset.hid = rectEl.dataset.hid;
+    el.hlDel.dataset.pid = rectEl.dataset.pid;
+    el.hlDel.classList.add('show');
+  }
+  function hideHlDelSoon() {
+    clearTimeout(hlHideTimer);
+    hlHideTimer = setTimeout(function () { el.hlDel.classList.remove('show'); }, 180);
+  }
+  document.addEventListener('pointerover', function (e) {
+    var r = e.target.closest && e.target.closest('.hl-rect');
+    if (r) showHlDel(r);
+  });
+  document.addEventListener('pointerout', function (e) {
+    var t = e.target.closest && e.target.closest('.hl-rect');
+    if (!t) return;
+    var to = e.relatedTarget;
+    if (to && to.closest && (to.closest('.hl-rect') || to.closest('#hlDel'))) return;
+    hideHlDelSoon();
+  });
+  el.hlDel.addEventListener('pointerover', function () { clearTimeout(hlHideTimer); });
+  el.hlDel.addEventListener('click', function (e) {
+    e.stopPropagation();
+    deleteHighlight(+el.hlDel.dataset.pid, el.hlDel.dataset.hid);
+  });
+
+  function mergeRectsPerLine(rectsRaw, pr) {
+    var mapped = rectsRaw.map(function (r) {
+      return {
+        x:  (r.left   - pr.left) / pr.width,
+        y:  (r.top    - pr.top)  / pr.height,
+        x2: (r.right  - pr.left) / pr.width,
+        y2: (r.bottom - pr.top)  / pr.height,
+        h:  r.height / pr.height
+      };
+    }).filter(function (r) { return r.x2 - r.x > 0.0005 && r.h > 0.0005; });
+    if (!mapped.length) return [];
+    mapped.sort(function (a, b) { return a.y !== b.y ? a.y - b.y : a.x - b.x; });
+    // Group into lines
+    var lines = [];
+    mapped.forEach(function (r) {
+      var placed = false;
+      for (var i = 0; i < lines.length; i++) {
+        var l = lines[i];
+        if (Math.abs(r.y - l.y) < l.h * 0.5) {
+          l.x  = Math.min(l.x,  r.x);
+          l.x2 = Math.max(l.x2, r.x2);
+          l.y  = Math.min(l.y,  r.y);
+          l.y2 = Math.max(l.y2, r.y2);
+          l.h  = l.y2 - l.y;
+          l.segs.push(r);
+          placed = true; break;
+        }
+      }
+      if (!placed) lines.push({ x: r.x, y: r.y, x2: r.x2, y2: r.y2, h: r.h, segs: [r] });
+    });
+    // Bridge inter-word gaps: getClientRects gives one rect per word/span;
+    // spaces between words show as visible gaps. Extend each segment's right
+    // edge to the next segment's left edge when the gap is small (a space).
+    var MAX_GAP = 0.002; // fraction of page width — only sub-pixel rounding gaps; word spaces are already included in selection rects as separate span rects
+    return lines.map(function (l) {
+      var segs = l.segs.slice().sort(function (a, b) { return a.x - b.x; });
+      for (var i = 0; i < segs.length - 1; i++) {
+        var gap = segs[i + 1].x - segs[i].x2;
+        if (gap >= 0 && gap <= MAX_GAP) segs[i].x2 = segs[i + 1].x;
+      }
+      var x  = segs[0].x;
+      var x2 = segs[segs.length - 1].x2;
+      return {
+        x: clamp(x,       0, 1),
+        y: clamp(l.y,     0, 1),
+        w: clamp(x2 - x,  0, 1),
+        h: clamp(l.y2 - l.y, 0, 1)
+      };
+    }).filter(function (r) { return r.w > 0.0005 && r.h > 0.0005; });
+  }
+  /* Live selection preview: paints a merged, gapless rectangle over whatever
+   * text is currently selected, instead of the native
+   * per-word ::selection painting. The real DOM selection still exists
+   * underneath, so copy (Ctrl+C) keeps working normally. */
+  function findPageIndexForNode(node) {
+    for (var i = 0; i < pages.length; i++) {
+      if (pages[i].textLayer.contains(node)) return i;
+    }
+    return -1;
+  }
+  function clearAllSelPreviews() {
+    pages.forEach(function (p) { p.selLayer.querySelectorAll('.sel-rect').forEach(function (n) { n.remove(); }); });
+  }
+  function renderSelPreview(p, rects) {
+    p.selLayer.querySelectorAll('.sel-rect').forEach(function (n) { n.remove(); });
+    rects.forEach(function (r) {
+      var d = document.createElement('div');
+      d.className = 'sel-rect';
+      d.style.left = (r.x * 100) + '%';
+      d.style.top = (r.y * 100) + '%';
+      d.style.width = (r.w * 100) + '%';
+      d.style.height = (r.h * 100) + '%';
+      p.selLayer.appendChild(d);
+    });
+  }
+  function updateSelPreview() {
+    if (!state.doc) { clearAllSelPreviews(); return; }
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) { clearAllSelPreviews(); return; }
+    var range = sel.getRangeAt(0);
+    var idx = findPageIndexForNode(range.commonAncestorContainer);
+    if (idx < 0) { clearAllSelPreviews(); return; }
+    var rectsRaw = Array.from(range.getClientRects()).filter(function (r) { return r.width > 1 && r.height > 1; });
+    if (!rectsRaw.length) { clearAllSelPreviews(); return; }
+    var pr = pages[idx].wrap.getBoundingClientRect();
+    clearAllSelPreviews();
+    renderSelPreview(pages[idx], mergeRectsPerLine(rectsRaw, pr));
+  }
+  document.addEventListener('selectionchange', updateSelPreview);
+
+  /* Returns true if a highlight was added from the current text selection. */
+  function commitSelectionHighlight() {
+    if (state.tool !== 'highlight') return false;
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return false;
+    var range = sel.getRangeAt(0);
+    var idx = findPageIndexForNode(range.commonAncestorContainer);
+    if (idx < 0) return false;
+    var rectsRaw = Array.from(range.getClientRects()).filter(function (r) { return r.width > 1 && r.height > 1; });
+    sel.removeAllRanges();
+    if (!rectsRaw.length) return false;
+    var pr = pages[idx].wrap.getBoundingClientRect();
+    var rects = mergeRectsPerLine(rectsRaw, pr);
+    if (!rects.length) return false;
+    rects = rects.map(function (r) {
+      var newH = clamp(r.h * state.highlightSize, 0.0005, 1);
+      return { x: r.x, y: clamp(r.y + (r.h - newH) / 2, 0, 1 - newH), w: r.w, h: newH };
+    });
+    var pid = idx + 1;
+    pushHistory();
+    highlightsOnPage(pid, true).push({ id: uid(), color: state.highlightColor, rects: rects });
+    scheduleSave();
+    renderHighlights(pid);
+    return true;
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  Highlights: freehand fallback for content that isn't selectable
+   *  text (scanned pages, images inside a PDF that haven't been run
+   *  through "Scan text"). While the Highlight tool is active this tracks
+   *  the raw pointer path of every drag; if the drag didn't turn into a
+   *  real text selection (handled above), the path becomes a highlight
+   *  instead of doing nothing.
+   *
+   *  A drag that's basically a straight line - with just the wobble of an
+   *  unsteady hand or mouse - is straightened into a clean bar, the same
+   *  way selecting a line of text gives a clean bar. If that straight-ish
+   *  drag is close to horizontal (the normal case: dragging along a line
+   *  of scanned text or an image caption), it's snapped fully horizontal
+   *  so small vertical drift doesn't tilt it. A drag with an obvious,
+   *  deliberate bend in it keeps its actual shape instead of being
+   *  straightened.
+   * ------------------------------------------------------------------ */
+  var HL_FREE_BASE_WIDTH = 0.022; // fraction of page width, at highlightSize = 1
+  var hlFreeDrag = null;
+  function hlFreePtFrac(e, rect) { return { x: clamp((e.clientX - rect.left) / rect.width, 0, 1), y: clamp((e.clientY - rect.top) / rect.height, 0, 1) }; }
+  /* True only when the pointer is directly over one of OCR/pdf.js's own
+   * text spans - i.e. over content that can actually be selected. Anything
+   * else under the Highlight tool (the canvas image itself, blank margins,
+   * un-OCR'd areas) is "non-selectable" and gets the freehand brush.
+   *
+   * When "Free-draw on OCR text" is on, a span added by Scan text (class
+   * "ocr") is deliberately treated as NOT selectable here too, so dragging
+   * over it falls through to the same freehand brush used on an un-OCR'd
+   * part, instead of snapping to Tesseract's per-word boxes. */
+  function hlOverSelectableText(e) {
+    if (!(e.target && e.target.tagName === 'SPAN' && e.target.closest && e.target.closest('.text-layer'))) return false;
+    if (state.freeOcrHighlight && e.target.classList.contains('ocr')) return false;
+    return true;
+  }
+  el.stage.addEventListener('pointerdown', function (e) {
+    if (state.tool !== 'highlight' || !state.doc || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (e.target.closest && e.target.closest('.comment-pin, .attach-pin, button')) return;
+    var wrapEl = e.target.closest && e.target.closest('.page-wrap');
+    if (!wrapEl) return;
+    var rect = wrapEl.getBoundingClientRect();
+    var overText = hlOverSelectableText(e);
+    hlFreeDrag = { pid: +wrapEl.dataset.pid, rect: rect, pts: [hlFreePtFrac(e, rect)], blockSelection: !overText };
+    // The drag started on non-selectable content (not a real text span): stop
+    // the browser from starting a text selection at all for this drag, so it
+    // can't "snap" to the nearest OCR'd word elsewhere on the page instead of
+    // leaving that area alone for the freehand brush.
+    if (!overText) e.preventDefault();
+  });
+  document.addEventListener('selectstart', function (e) {
+    if (state.tool === 'highlight' && hlFreeDrag && hlFreeDrag.blockSelection) e.preventDefault();
+  });
+  /* Circle "brush" cursor shown over non-selectable content while the
+   * Highlight tool is active, so it's clear at a glance whether a drag here
+   * will select real text or paint a freehand highlight instead. */
+  var hlRing = document.createElement('div');
+  hlRing.className = 'hl-ring';
+  document.body.appendChild(hlRing);
+  function moveHlRing(e) {
+    if (state.tool !== 'highlight' || e.pointerType === 'touch' || !e.target.closest || !e.target.closest('.page-wrap') || hlOverSelectableText(e)) {
+      hlRing.style.display = 'none';
+      return;
+    }
+    var d = Math.max(10, HL_FREE_BASE_WIDTH * state.highlightSize * currentWidth());
+    hlRing.style.width = hlRing.style.height = d + 'px';
+    hlRing.style.left = e.clientX + 'px';
+    hlRing.style.top = e.clientY + 'px';
+    hlRing.style.display = 'block';
+  }
+  el.stage.addEventListener('pointermove', moveHlRing);
+  el.stage.addEventListener('pointerleave', function () { hlRing.style.display = 'none'; });
+  el.stage.addEventListener('pointermove', function (e) {
+    if (!hlFreeDrag) return;
+    hlFreeDrag.pts.push(hlFreePtFrac(e, hlFreeDrag.rect));
+    // Only the freehand (non-text) path needs a manual live preview - a real
+    // text selection already paints its own growing preview via
+    // updateSelPreview()/selectionchange, further up.
+    if (hlFreeDrag.blockSelection) renderFreehandDragPreview(hlFreeDrag);
+    // Some touchpads (drag-lock / "tap and hold to drag" gestures) never
+    // deliver a pointerup/mouseup at the end of a drag, so a highlight
+    // could otherwise keep growing forever after the finger/button has
+    // actually lifted. e.buttons reliably reports 0 the instant nothing is
+    // pressed anymore, even when the up event itself never arrives, so use
+    // that as a fallback signal to end the drag right here.
+    if (e.buttons === 0) finishHighlightDrag();
+  });
+  function endHlFreeDrag() {
+    if (hlFreeDrag) clearFreehandDragPreview(hlFreeDrag.pid);
+    hlFreeDrag = null;
+  }
+  el.stage.addEventListener('pointercancel', endHlFreeDrag);
+  /* Straightens a wobbly drag, snapping it horizontal when the overall
+   * direction is close enough to horizontal; returns the original points
+   * unchanged when the wobble looks deliberate. Returns null for a drag
+   * too short to be meaningful (an accidental tap). */
+  function snapFreehandPath(pts) {
+    var a = pts[0], b = pts[pts.length - 1];
+    var dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+    if (len < 0.0015) return null;
+    var maxDev = 0;
+    for (var i = 0; i < pts.length; i++) {
+      var t = ((pts[i].x - a.x) * dx + (pts[i].y - a.y) * dy) / (len * len);
+      var px = a.x + dx * t, py = a.y + dy * t;
+      var dev = Math.hypot(pts[i].x - px, pts[i].y - py);
+      if (dev > maxDev) maxDev = dev;
+    }
+    var wobbleTolerance = Math.max(0.006, len * 0.12);
+    if (maxDev > wobbleTolerance) return pts; // deliberate bend - keep the real path
+    var nearHorizontal = Math.abs(dy) <= Math.abs(dx) * 0.36; // within ~20 degrees of flat
+    var y = nearHorizontal ? (a.y + b.y) / 2 : null;
+    return [
+      { x: a.x, y: y === null ? a.y : y },
+      { x: b.x, y: y === null ? b.y : y }
+    ];
+  }
+  function commitFreehandHighlight(drag) {
+    if (!drag || drag.pts.length < 2) return false;
+    var pts = snapFreehandPath(drag.pts);
+    if (!pts) return false;
+    pushHistory();
+    highlightsOnPage(drag.pid, true).push({
+      id: uid(), color: state.highlightColor, rects: [],
+      path: pts, width: clamp(HL_FREE_BASE_WIDTH * state.highlightSize, 0.006, 0.05)
+    });
+    scheduleSave();
+    renderHighlights(drag.pid);
+    return true;
+  }
+  function finishHighlightDrag() {
+    var drag = hlFreeDrag;
+    hlFreeDrag = null;
+    if (drag) clearFreehandDragPreview(drag.pid);
+    if (state.tool !== 'highlight') return;
+    setTimeout(function () {
+      // Real text selection wins if the drag produced one; the freehand
+      // path is only used as a fallback when there was nothing to select.
+      if (!commitSelectionHighlight() && drag) commitFreehandHighlight(drag);
+    }, 0);
+  }
+  document.addEventListener('mouseup', finishHighlightDrag);
+  document.addEventListener('touchend', finishHighlightDrag);
+
+  /* ------------------------------------------------------------------ *
+   *  Tools: eraser
+   *  Touch a highlight with the eraser and that whole highlight (everything
+   *  made by one drag or click) is removed. One eraser drag = one Undo step.
+   * ------------------------------------------------------------------ */
+  var ERASER_R = 12;                       // eraser radius in screen pixels
+  var eraseStroke = null;
+  var eraserRing = document.createElement('div');
+  eraserRing.className = 'eraser-ring';
+  eraserRing.style.width = eraserRing.style.height = (ERASER_R * 2) + 'px';
+  document.body.appendChild(eraserRing);
+  function hideEraserRing() { if (eraserRing) eraserRing.style.display = 'none'; }
+  function moveEraserRing(e) {
+    if (state.tool !== 'erase' || e.pointerType === 'touch' || !e.target.closest || !e.target.closest('#stage')) { hideEraserRing(); return; }
+    eraserRing.style.display = 'block';
+    eraserRing.style.left = e.clientX + 'px';
+    eraserRing.style.top = e.clientY + 'px';
+  }
+  /* If the eraser touches any part of a highlight, the WHOLE highlight (everything created by that
+   * one drag or click) is removed. Also removes any pen stroke it touches. Returns true if anything was removed. */
+  function eraseAt(idx, cx, cy) {
+    var p = pages[idx];
+    var e = pageEntry(idx + 1);
+    if (!p || !e || (!e.highlights.length && !e.strokes.length)) return false;
+    var pr = p.wrap.getBoundingClientRect();
+    if (cx < pr.left - ERASER_R || cx > pr.right + ERASER_R || cy < pr.top - ERASER_R || cy > pr.bottom + ERASER_R) return false;
+    var fx = (cx - pr.left) / pr.width, fy = (cy - pr.top) / pr.height;
+    var rx = ERASER_R / pr.width, ry = (ERASER_R * 0.35) / pr.height;
+    var a = fx - rx, b = fx + rx;
+    var kept = e.highlights.filter(function (h) {
+      if (h.rects && h.rects.length) {
+        return !h.rects.some(function (r) {
+          return b > r.x && a < r.x + r.w && fy >= r.y - ry && fy <= r.y + r.h + ry;
+        });
+      }
+      if (h.path && h.path.length) {
+        return !h.path.some(function (pt) {
+          return Math.hypot((pt.x - fx) * pr.width, (pt.y - fy) * pr.height) <= ERASER_R;
+        });
+      }
+      return true;
+    });
+    var erH = kept.length !== e.highlights.length;
+    var keptS = e.strokes.filter(function (s) {
+      return !s.points.some(function (pt) {
+        return Math.hypot((pt.x - fx) * pr.width, (pt.y - fy) * pr.height) <= ERASER_R;
+      });
+    });
+    var erS = keptS.length !== e.strokes.length;
+    if (!erH && !erS) return false;
+    if (!eraseStroke.pushed) { eraseStroke.snapshot(); eraseStroke.pushed = true; }
+    e.highlights = kept;
+    e.strokes = keptS;
+    renderHighlights(idx + 1);
+    renderDrawings(idx + 1);
+    return true;
+  }
+  function eraseSegment(x0, y0, x1, y1) {
+    var dist = Math.hypot(x1 - x0, y1 - y0);
+    var steps = Math.max(1, Math.ceil(dist / (ERASER_R * 0.5)));
+    for (var i = 1; i <= steps; i++) {
+      var x = x0 + (x1 - x0) * i / steps, y = y0 + (y1 - y0) * i / steps;
+      for (var k = 0; k < pages.length; k++) { var e2 = pageEntry(k + 1); if (e2 && (e2.highlights.length || e2.strokes.length)) eraseAt(k, x, y); }
+    }
+  }
+  el.stage.addEventListener('pointerdown', function (e) {
+    if (state.tool !== 'erase' || !state.doc || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (e.target.closest && e.target.closest('.comment-pin, .attach-pin, button')) return;
+    if (!e.target.closest || !e.target.closest('.page-wrap')) return;
+    e.preventDefault();
+    eraseStroke = { x: e.clientX, y: e.clientY, pushed: false, snapshot: pushHistory };
+    try { el.stage.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    eraseSegment(e.clientX, e.clientY, e.clientX, e.clientY);
+  });
+  el.stage.addEventListener('pointermove', function (e) {
+    moveEraserRing(e);
+    if (!eraseStroke) return;
+    eraseSegment(eraseStroke.x, eraseStroke.y, e.clientX, e.clientY);
+    eraseStroke.x = e.clientX; eraseStroke.y = e.clientY;
+  });
+  function endEraseStroke() {
+    if (!eraseStroke) return;
+    var did = eraseStroke.pushed;
+    eraseStroke = null;
+    if (did) { scheduleSave(); toast('Erased', undo); }
+  }
+  el.stage.addEventListener('pointerup', endEraseStroke);
+  el.stage.addEventListener('pointercancel', endEraseStroke);
+  el.stage.addEventListener('pointerleave', hideEraserRing);
+
+  /* ------------------------------------------------------------------ *
+   *  Tools: draw (freehand pen)
+   *  Each drag draws one stroke of the current color/size. Points are
+   *  stored as fractions (0-1) of the page's width/height so a stroke
+   *  stays put and stays the right thickness at any zoom level. One
+   *  drag = one Undo step, same as the other tools.
+   * ------------------------------------------------------------------ */
+  var currentStroke = null;
+  function drawPtFrac(e, rect) {
+    return { x: clamp((e.clientX - rect.left) / rect.width, 0, 1), y: clamp((e.clientY - rect.top) / rect.height, 0, 1) };
+  }
+  el.stage.addEventListener('pointerdown', function (e) {
+    if (state.tool !== 'draw' || !state.doc || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (e.target.closest && e.target.closest('.comment-pin, .attach-pin, button')) return;
+    var wrapEl = e.target.closest && e.target.closest('.page-wrap');
+    if (!wrapEl) return;
+    e.preventDefault();
+    var pid = +wrapEl.dataset.pid;
+    var rect = wrapEl.getBoundingClientRect();
+    pushHistory();
+    var strokeObj = { id: uid(), color: state.drawColor, size: state.drawSize / DRAW_REF_W, points: [drawPtFrac(e, rect)] };
+    strokesOnPage(pid, true).push(strokeObj);
+    currentStroke = { pid: pid, obj: strokeObj, rect: rect };
+    try { el.stage.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    renderDrawings(pid);
+  });
+  el.stage.addEventListener('pointermove', function (e) {
+    if (!currentStroke) return;
+    currentStroke.obj.points.push(drawPtFrac(e, currentStroke.rect));
+    renderDrawings(currentStroke.pid);
+  });
+  function endDrawStroke() {
+    if (!currentStroke) return;
+    var pid = currentStroke.pid, obj = currentStroke.obj;
+    currentStroke = null;
+    if (obj.points.length < 2) obj.points.push({ x: clamp(obj.points[0].x + 0.0008, 0, 1), y: obj.points[0].y }); // a plain click still leaves a visible dot
+    renderDrawings(pid);
+    scheduleSave();
+  }
+  el.stage.addEventListener('pointerup', endDrawStroke);
+  el.stage.addEventListener('pointercancel', endDrawStroke);
+
+  /* ------------------------------------------------------------------ *
+   *  Tools: comment pins
+   *  A pin is a point (x, y as fractions of the page) with a small piece
+   *  of rich-text attached. Clicking the page while the Comment tool is
+   *  active drops a pin; clicking any existing pin, any time, reopens it
+   *  for editing. Nothing is written to state.data until Save is pressed.
+   * ------------------------------------------------------------------ */
+  var PIN_SVG = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1 2h14v9H6l-3.5 3.5V11H1z"/></svg>';
+  var pendingPin = null, pendingPinEl = null;
+  var editingCommentId = null, editingIsNew = false, editingPage = null;
+  var pendingAttachPos = null;
+
+  function renderComments(n) {
+    var p = pages[n - 1];
+    if (!p) return;
+    p.commentLayer.querySelectorAll('.comment-pin:not(.pending)').forEach(function (node) { node.remove(); });
+    commentsOnPage(n).forEach(function (c) {
+      var d = document.createElement('button');
+      d.type = 'button';
+      d.className = 'comment-pin';
+      d.style.left = (c.x * 100) + '%';
+      d.style.top = (c.y * 100) + '%';
+      d.dataset.cid = c.id;
+      d.dataset.pid = n;
+      d.setAttribute('aria-label', 'Open comment');
+      d.innerHTML = PIN_SVG;
+      p.commentLayer.appendChild(d);
+    });
+  }
+  var CLIP_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4.5 5.5 10a2 2 0 1 0 2.83 2.83L14 7.16a3.5 3.5 0 1 0-4.95-4.95L3.5 7.75"/></svg>';
+  function renderAttachments(n) {
+    var p = pages[n - 1];
+    if (!p) return;
+    p.commentLayer.querySelectorAll('.attach-pin').forEach(function (node) { node.remove(); });
+    attachmentsOnPage(n).forEach(function (a) {
+      var d = document.createElement('button');
+      d.type = 'button';
+      d.className = 'attach-pin';
+      d.style.left = (a.x * 100) + '%';
+      d.style.top = (a.y * 100) + '%';
+      d.dataset.aid = a.id;
+      d.dataset.pid = n;
+      d.title = a.name;
+      d.setAttribute('aria-label', 'Open attachment: ' + a.name);
+      d.innerHTML = CLIP_SVG;
+      p.commentLayer.appendChild(d);
+    });
+  }
+  function removePendingPin() {
+    if (pendingPinEl) { pendingPinEl.remove(); pendingPinEl = null; }
+    pendingPin = null;
+  }
+  function closeCommentDialog() {
+    if (el.cmtPanel.hidden) return;
+    el.cmtPanel.hidden = true;
+    if (editingIsNew) removePendingPin();
+    editingCommentId = null; editingIsNew = false; editingPage = null;
+  }
+  function openCommentEditor(pid, comment, isNew) {
+    editingPage = pid;
+    editingCommentId = comment.id;
+    editingIsNew = !!isNew;
+    el.cmtEditor.innerHTML = comment.html || '';
+    cmtLastRange = null;
+    setTimeout(showCurrentSize, 0);
+    el.cmtDelete.hidden = editingIsNew;
+    el.cmtPanel.hidden = false;
+    updateBoldUlState();
+    // Only a brand-new comment gets auto-focused (so typing can start right
+    // away) - reopening an existing, already-saved comment just to read it
+    // no longer grabs focus, which is what was popping the on-screen
+    // keyboard open every time on mobile. Tap into the text to edit it.
+    if (isNew) setTimeout(function () { el.cmtEditor.focus(); }, 30);
+  }
+  function startNewComment(pid, x, y) {
+    var p = pages[pid - 1];
+    if (!p) return;
+    removePendingPin();
+    pendingPin = { x: x, y: y };
+    var d = document.createElement('div');
+    d.className = 'comment-pin pending';
+    d.style.left = (x * 100) + '%';
+    d.style.top = (y * 100) + '%';
+    d.innerHTML = PIN_SVG;
+    p.commentLayer.appendChild(d);
+    pendingPinEl = d;
+    openCommentEditor(pid, { id: null, html: '' }, true);
+  }
+  // Delegated on the whole stage (rather than one page's comment layer) so a
+  // pin on any page can be opened, and new pins can be placed on whichever
+  // page the click lands on.
+  el.stage.addEventListener('click', function (e) {
+    var atPinEl = e.target.closest('.attach-pin');
+    if (atPinEl) {
+      e.stopPropagation();
+      var apid = +atPinEl.dataset.pid;
+      var alist = attachmentsOnPage(apid), afound = null, ai;
+      for (ai = 0; ai < alist.length; ai++) { if (alist[ai].id === atPinEl.dataset.aid) { afound = alist[ai]; break; } }
+      if (afound) openAttachmentPopover(apid, afound, atPinEl);
+      return;
+    }
+    var pinEl = e.target.closest('.comment-pin');
+    if (pinEl) {
+      e.stopPropagation();
+      if (pinEl.classList.contains('pending')) return;
+      var pid = +pinEl.dataset.pid;
+      var list = commentsOnPage(pid), found = null, i;
+      for (i = 0; i < list.length; i++) { if (list[i].id === pinEl.dataset.cid) { found = list[i]; break; } }
+      if (found) openCommentEditor(pid, found, false);
+      return;
+    }
+    if (state.tool === 'attach') {
+      var wrapElA = e.target.closest('.page-wrap');
+      if (!wrapElA) return;
+      var pidA = +wrapElA.dataset.pid;
+      var prA = wrapElA.getBoundingClientRect();
+      var xA = clamp((e.clientX - prA.left) / prA.width, 0, 1);
+      var yA = clamp((e.clientY - prA.top) / prA.height, 0, 1);
+      pendingAttachPos = { pid: pidA, x: xA, y: yA };
+      window.focus();
+      el.atFileIn.click();
+      return;
+    }
+    if (state.tool !== 'comment') return;
+    var wrapEl = e.target.closest('.page-wrap');
+    if (!wrapEl) return;
+    var pid2 = +wrapEl.dataset.pid;
+    var pr = wrapEl.getBoundingClientRect();
+    var x = clamp((e.clientX - pr.left) / pr.width, 0, 1);
+    var y = clamp((e.clientY - pr.top) / pr.height, 0, 1);
+    startNewComment(pid2, x, y);
+  });
+  /* Collapses the formatting row (Bold, font, size, background) so a long
+     comment can be read without half the panel taken up by controls;
+     remembered per device, same pattern as the toolbar-size setting. */
+  var CMT_TOOLBAR_HIDE_KEY = 'pdfEditor.cmtToolbarHidden';
+  function setCmtToolbarHidden(h) {
+    el.cmtPanel.classList.toggle('compact', h);
+    el.cmtToolbarToggle.setAttribute('aria-pressed', h ? 'true' : 'false');
+    el.cmtToolbarToggle.title = h ? 'Show formatting toolbar' : 'Hide formatting toolbar';
+    el.cmtToolbarToggle.setAttribute('aria-label', h ? 'Show formatting toolbar' : 'Hide formatting toolbar');
+    try { localStorage.setItem(CMT_TOOLBAR_HIDE_KEY, h ? '1' : '0'); } catch (e) { /* ignore */ }
+  }
+  el.cmtToolbarToggle.addEventListener('click', function () { setCmtToolbarHidden(!el.cmtPanel.classList.contains('compact')); });
+  (function () {
+    var saved = false;
+    try { saved = localStorage.getItem(CMT_TOOLBAR_HIDE_KEY) === '1'; } catch (e) { /* ignore */ }
+    setCmtToolbarHidden(saved);
+  })();
+
+  $('cmtClose').addEventListener('click', closeCommentDialog);
+  $('cmtCancel').addEventListener('click', closeCommentDialog);
+  el.cmtBold.addEventListener('click', function () { el.cmtEditor.focus(); document.execCommand('bold'); setTimeout(updateBoldUlState, 0); });
+
+  /* "Underline all bold text": every piece of text that is displayed bold in
+   * the comment (bold tags, bold styling pasted in, headings) also gets
+   * underlined. Clicking again removes those underlines. */
+  function cmtTextNodes(root) {
+    var out = [], w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), n;
+    while ((n = w.nextNode())) out.push(n);
+    return out;
+  }
+  function isBoldNode(tn) {
+    var par = tn.parentElement;
+    if (!par) return false;
+    var fw = window.getComputedStyle(par).fontWeight;
+    return fw === 'bold' || fw === 'bolder' || parseInt(fw, 10) >= 600;
+  }
+  function isUnderlinedNode(tn, root) {
+    for (var e = tn.parentElement; e && e !== root; e = e.parentElement) {
+      if (e.tagName === 'U') return true;
+      if (/underline/i.test((e.style && e.style.textDecoration) || '')) return true;
+    }
+    return false;
+  }
+  function boldUlInfo() {
+    var nodes = cmtTextNodes(el.cmtEditor).filter(function (t) { return /\S/.test(t.nodeValue); });
+    var bold = nodes.filter(isBoldNode);
+    return { bold: bold, allUnderlined: bold.length > 0 && bold.every(function (t) { return isUnderlinedNode(t, el.cmtEditor); }) };
+  }
+  function updateBoldUlState() {
+    el.cmtBoldUl.setAttribute('aria-pressed', boldUlInfo().allUnderlined ? 'true' : 'false');
+  }
+  el.cmtBoldUl.addEventListener('click', function () {
+    var ed = el.cmtEditor;
+    var info = boldUlInfo();
+    if (!info.bold.length) { toast('There is no bold text in this comment.'); return; }
+    var removing = info.allUnderlined;
+    var targets = info.bold;
+    // Edit the existing nodes in place: only <u> wrappers are added or removed,
+    // so font size, font and everything else stay exactly as they were.
+    targets.forEach(function (tn) {
+      if (removing) {
+        var u = tn.parentElement;
+        while (u && u !== ed && u.tagName !== 'U') u = u.parentElement;
+        if (u && u !== ed) {
+          var onlyBold = cmtTextNodes(u).every(function (x) { return !/\S/.test(x.nodeValue) || targets.indexOf(x) !== -1; });
+          if (onlyBold) { while (u.firstChild) u.parentNode.insertBefore(u.firstChild, u); u.remove(); }
+        }
+      } else if (!isUnderlinedNode(tn, ed)) {
+        var uEl = document.createElement('u');
+        tn.parentNode.insertBefore(uEl, tn);
+        uEl.appendChild(tn);
+      }
+    });
+    updateBoldUlState();
+  });
+  el.cmtEditor.addEventListener('input', updateBoldUlState);
+
+  /* Background color of the comment panel (remembered in this browser) */
+  var CMT_BG_KEY = 'pdfEditor.commentBackground';
+  function applyCmtBg(v) {
+    if (!v || v === 'default') el.cmtPanel.removeAttribute('data-bg');
+    else el.cmtPanel.setAttribute('data-bg', v);
+    el.cmtBg.value = (v && el.cmtBg.querySelector('option[value="' + v + '"]')) ? v : 'default';
+  }
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem(CMT_BG_KEY); } catch (e) { /* storage blocked - just use the default */ }
+    applyCmtBg(saved);
+  })();
+  el.cmtBg.addEventListener('change', function () {
+    applyCmtBg(el.cmtBg.value);
+    try { localStorage.setItem(CMT_BG_KEY, el.cmtBg.value); } catch (e) { /* ignore */ }
+  });
+  /* Font / size: if some text is selected in the comment, only that text is
+   * changed; if nothing is selected, the whole comment is changed. */
+  var cmtLastRange = null;
+  function showCurrentSize() {
+    var input = el.cmtSizePt;
+    if (document.activeElement === input) return;
+    var sel = window.getSelection(), node = sel && sel.rangeCount ? sel.anchorNode : null;
+    if (!node || !el.cmtEditor.contains(node)) {
+      var w = document.createTreeWalker(el.cmtEditor, NodeFilter.SHOW_TEXT, null), first = null, n;
+      while ((n = w.nextNode())) { if (/\S/.test(n.nodeValue)) { first = n; break; } }
+      node = first || el.cmtEditor;
+    }
+    var elx = node.nodeType === 3 ? node.parentElement : node;
+    if (!elx) return;
+    var pt = parseFloat(window.getComputedStyle(elx).fontSize) * 0.75;
+    if (isFinite(pt)) input.value = String(Math.round(pt * 2) / 2);
+  }
+  document.addEventListener('selectionchange', function () {
+    var sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    var r = sel.getRangeAt(0);
+    if (el.cmtEditor.contains(r.commonAncestorContainer)) { cmtLastRange = r.cloneRange(); showCurrentSize(); }
+  });
+  function applyToSelectionOrAll(command, value, hooks) {
+    var ed = el.cmtEditor, sel = window.getSelection();
+    ed.focus();
+    var r = (cmtLastRange && ed.contains(cmtLastRange.commonAncestorContainer)) ? cmtLastRange : null;
+    var wholeComment = !r || r.collapsed || !/\S/.test(r.toString());
+    sel.removeAllRanges();
+    if (wholeComment) {
+      var all = document.createRange();
+      all.selectNodeContents(ed);
+      sel.addRange(all);
+    } else {
+      sel.addRange(r);
+    }
+    if (hooks && hooks.before) hooks.before();
+    document.execCommand(command, false, value);
+    var changed = (hooks && hooks.after) ? hooks.after() : [];
+    if (wholeComment) { sel.collapseToEnd(); cmtLastRange = null; }   // don't leave everything selected
+    else if (changed.length) {                                        // keep the same text selected for further changes
+      var rr = document.createRange();
+      rr.setStartBefore(changed[0]); rr.setEndAfter(changed[changed.length - 1]);
+      sel.removeAllRanges(); sel.addRange(rr);
+    }
+    updateBoldUlState();
+    showCurrentSize();
+  }
+
+  /* Exact font size (in points). The browser's own size command only knows
+   * seven fixed steps, so it is used as a marker (size 7) and every marked
+   * piece is then given the exact size the person typed. */
+  function applyFontSizePt(pt) {
+    var ed = el.cmtEditor;
+    applyToSelectionOrAll('fontSize', '7', {
+      before: function () {
+        ed.querySelectorAll('font[size="7"]').forEach(function (f) { f.setAttribute('data-old', '1'); });
+        ed.querySelectorAll('span[style*="xxx-large"]').forEach(function (f) { f.setAttribute('data-old', '1'); });
+      },
+      after: function () {
+        var changed = [];
+        ed.querySelectorAll('font[size="7"], span[style*="xxx-large"]').forEach(function (f) {
+          if (f.hasAttribute('data-old')) return;
+          if (f.tagName === 'FONT') f.removeAttribute('size');
+          f.style.fontSize = pt + 'pt';
+          // sizes set further inside would override this one - clear them so the whole piece gets the new size
+          f.querySelectorAll('*').forEach(function (d) {
+            if (d.style && d.style.fontSize) d.style.fontSize = '';
+            if (d.tagName === 'FONT' && d.hasAttribute('size')) d.removeAttribute('size');
+          });
+          changed.push(f);
+        });
+        ed.querySelectorAll('[data-old]').forEach(function (f) { f.removeAttribute('data-old'); });
+        return changed;
+      }
+    });
+  }
+  el.cmtFont.addEventListener('change', function () { applyToSelectionOrAll('fontName', el.cmtFont.value); });
+  el.cmtSize.addEventListener('change', function () { applyFontSizePt(parseFloat(el.cmtSize.value)); });
+  el.cmtSizePt.addEventListener('change', function () {
+    var v = parseFloat(el.cmtSizePt.value);
+    if (!isFinite(v)) { showCurrentSize(); return; }
+    v = Math.min(300, Math.max(4, Math.round(v * 2) / 2));
+    el.cmtSizePt.value = String(v);
+    applyFontSizePt(v);
+  });
+  el.cmtSave.addEventListener('click', function () {
+    var html = sanitizeCommentHtml(el.cmtEditor.innerHTML);
+    var textOnly = html.replace(/<[^>]*>/g, '').trim();
+    var pid = editingPage;
+    if (!textOnly) {
+      if (!editingIsNew) {
+        pushHistory();
+        var e0 = pageEntry(pid);
+        if (e0) e0.comments = e0.comments.filter(function (c) { return c.id !== editingCommentId; });
+        scheduleSave();
+        renderComments(pid);
+        toast('Comment removed', undo);
+      }
+      closeCommentDialog();
+      return;
+    }
+    pushHistory();
+    if (editingIsNew) {
+      commentsOnPage(pid, true).push({ id: uid(), x: pendingPin.x, y: pendingPin.y, html: html });
+      editingIsNew = false; // committed: the dialog's close handler should leave the pin alone
+    } else {
+      var entry = pageEntry(pid, true), found2 = null, j;
+      for (j = 0; j < entry.comments.length; j++) { if (entry.comments[j].id === editingCommentId) { found2 = entry.comments[j]; break; } }
+      if (found2) found2.html = html;
+    }
+    scheduleSave();
+    renderComments(pid);
+    closeCommentDialog();
+  });
+  el.cmtDelete.addEventListener('click', function () {
+    if (!editingCommentId) return;
+    var pid = editingPage;
+    pushHistory();
+    var e1 = pageEntry(pid);
+    if (e1) e1.comments = e1.comments.filter(function (c) { return c.id !== editingCommentId; });
+    scheduleSave();
+    renderComments(pid);
+    toast('Comment deleted', undo);
+    closeCommentDialog();
+  });
+
+  /* ------------------------------------------------------------------ *
+   *  Tools: file attachments
+   *  Clicking the page with the Attach tool active opens a file picker at
+   *  that spot; once a file is chosen it's read into a data URL and stored
+   *  inline (like a comment's HTML), so it round-trips through this app's
+   *  local storage and, on export, becomes a real PDF FileAttachment
+   *  annotation. Clicking an existing paperclip pin opens a small popover
+   *  to download or delete it — a browser can't launch a file in its
+   *  native app the way Acrobat can, so "opening" means downloading it.
+   * ------------------------------------------------------------------ */
+  el.atFileIn.addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    var pos = pendingAttachPos;
+    pendingAttachPos = null;
+    if (!f || !pos) return;
+    if (f.size > MAX_ATTACH_BYTES) {
+      toast('That file is too large to attach (max ' + Math.round(MAX_ATTACH_BYTES / (1024 * 1024)) + ' MB).');
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function () {
+      pushHistory();
+      attachmentsOnPage(pos.pid, true).push({
+        id: uid(), x: pos.x, y: pos.y,
+        name: (f.name || 'file').slice(0, 180),
+        mime: f.type || guessMime(f.name),
+        size: f.size,
+        dataUrl: reader.result
+      });
+      scheduleSave();
+      renderAttachments(pos.pid);
+      toast('Attached \u201c' + (f.name || 'file') + '\u201d', undo);
+    };
+    reader.onerror = function () { toast('Could not read that file.'); };
+    reader.readAsDataURL(f);
+  });
+
+  function closeAttachPopover() { el.atPop.hidden = true; }
+  function openAttachmentPopover(pid, att, pinEl) {
+    el.atPop.dataset.pid = pid;
+    el.atPop.dataset.aid = att.id;
+    el.atPopName.textContent = att.name;
+    el.atPopSize.textContent = fmtBytes(att.size);
+    el.atPopOpen.textContent = (isLocalServer() || isCapacitorNative()) ? 'Open' : 'Download';
+    el.atPop.hidden = false;
+    var pb = pinEl.getBoundingClientRect();
+    var pop = el.atPop;
+    pop.style.left = '0px'; pop.style.top = '0px'; // measure at a known position first
+    var pw = pop.offsetWidth, ph = pop.offsetHeight;
+    var left = clamp(pb.left, 8, window.innerWidth - pw - 8);
+    var top = clamp(pb.top - ph - 8, 8, window.innerHeight - ph - 8);
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+  }
+  el.atPopOpen.addEventListener('click', function () {
+    var pid = +el.atPop.dataset.pid, aid = el.atPop.dataset.aid;
+    var list = attachmentsOnPage(pid), found = null, i;
+    for (i = 0; i < list.length; i++) { if (list[i].id === aid) { found = list[i]; break; } }
+    if (!found) return;
+    var bytes;
+    try { bytes = dataUrlToBytes(found.dataUrl); }
+    catch (e) { toast('Could not open that attachment.'); return; }
+    if (isLocalServer()) {
+      toast('Opening \u201c' + found.name + '\u201d\u2026');
+      openLocally(found.name, bytes).catch(function (e) {
+        toast('Could not open the file (' + e.message + '). Saving a copy instead.');
+        offerDownload(found.name, bytes, found.mime);
+      });
+    } else if (isCapacitorNative()) {
+      toast('Opening \u201c' + found.name + '\u201d\u2026');
+      openNatively(found.name, bytes, found.mime).catch(function (e) {
+        toast('Could not open the file (' + ((e && e.message) || 'error') + '). Saving a copy instead.');
+        offerDownload(found.name, bytes, found.mime);
+      });
+    } else {
+      try { offerDownload(found.name, bytes, found.mime); }
+      catch (e) { toast('Could not open that attachment.'); }
+    }
+  });
+  el.atPopDelete.addEventListener('click', function () {
+    var pid = +el.atPop.dataset.pid, aid = el.atPop.dataset.aid;
+    var e2 = pageEntry(pid);
+    if (!e2) return;
+    pushHistory();
+    e2.attachments = e2.attachments.filter(function (a) { return a.id !== aid; });
+    scheduleSave();
+    renderAttachments(pid);
+    closeAttachPopover();
+    toast('Attachment removed', undo);
+  });
+  document.addEventListener('pointerdown', function (e) {
+    if (el.atPop.hidden) return;
+    if (e.target.closest('#atPop') || e.target.closest('.attach-pin')) return;
+    closeAttachPopover();
+  });
+
+  /* Drag the strip on the panel's left edge to resize it — width is measured
+   * from the cursor to the (fixed) right edge of the screen. */
+  (function () {
+    var dragging = false, startX = 0, startW = 0;
+    el.cmtResize.addEventListener('pointerdown', function (e) {
+      dragging = true;
+      startX = e.clientX;
+      startW = el.cmtPanel.getBoundingClientRect().width;
+      el.cmtPanel.classList.add('resizing');
+      try { el.cmtResize.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      e.preventDefault();
+    });
+    el.cmtResize.addEventListener('pointermove', function (e) {
+      if (!dragging) return;
+      var w = clamp(startW + (startX - e.clientX), 300, Math.min(800, window.innerWidth - 420));
+      el.cmtPanel.style.width = w + 'px';
+    });
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      el.cmtPanel.classList.remove('resizing');
+      try { el.cmtResize.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    }
+    el.cmtResize.addEventListener('pointerup', endDrag);
+    el.cmtResize.addEventListener('pointercancel', endDrag);
+  })();
+
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () { layoutAllPages(); scheduleRepaintVisible(180); }).observe(el.viewer);
+  } else {
+    window.addEventListener('resize', function () { layoutAllPages(); scheduleRepaintVisible(180); });
+  }
+  el.viewer.addEventListener('scroll', function () {
+    if (scrollRAF) return;
+    scrollRAF = requestAnimationFrame(function () { scrollRAF = null; updateCurrentPageFromScroll(); });
+  });
+
+  // Ctrl/Cmd + wheel is how both a mouse wheel and a touchpad pinch report a
+  // zoom gesture in every major browser. Each page's canvas is re-rasterized
+  // at the new zoom level (see paintPage/currentWidth), so this never just
+  // stretches a blurry bitmap the way CSS-only zoom would.
+  el.viewer.addEventListener('wheel', function (e) {
+    if (!e.ctrlKey || !state.doc) return;
+    e.preventDefault();
+    var oldZoom = state.zoom;
+    var delta = clamp(e.deltaY, -100, 100);
+    var newZoom = clamp(Math.round(oldZoom * Math.exp(-delta * 0.0025) * 100) / 100, 0.5, 3);
+    if (newZoom === oldZoom) return;
+    var rect = el.viewer.getBoundingClientRect();
+    var anchorX = e.clientX - rect.left + el.viewer.scrollLeft;
+    var anchorY = e.clientY - rect.top + el.viewer.scrollTop;
+    var ratio = newZoom / oldZoom;
+    setZoom(newZoom);
+    el.viewer.scrollLeft = anchorX * ratio - (e.clientX - rect.left);
+    el.viewer.scrollTop = anchorY * ratio - (e.clientY - rect.top);
+  }, { passive: false });
+
+  /* Two-finger pinch-to-zoom (touch). Android's WebView here doesn't have
+     its own built-in pinch-zoom, so this reimplements it in JS using the
+     same anchored-zoom math as the Ctrl+wheel handler just above, driven
+     by the distance between two touch points instead of a wheel delta.
+     Only active with no editing tool selected (state.tool === 'none'), so
+     it never fights an in-progress single-finger draw/highlight/erase/
+     comment/attach drag from the first finger; listened for on el.viewer
+     itself with capture:true so it sees a pointerdown before el.stage's
+     own per-tool handlers do (those are all no-ops anyway while no tool
+     is selected, so nothing needs to be cancelled or stopped). */
+  var pinch = null;
+  function pinchIds() { return pinch ? Object.keys(pinch.pts) : []; }
+  function pinchDist() { var ids = pinchIds(), a = pinch.pts[ids[0]], b = pinch.pts[ids[1]]; return Math.hypot(a.x - b.x, a.y - b.y); }
+  function pinchMid() { var ids = pinchIds(), a = pinch.pts[ids[0]], b = pinch.pts[ids[1]]; return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+  el.viewer.addEventListener('pointerdown', function (e) {
+    if (e.pointerType !== 'touch' || state.tool !== 'none' || !state.doc) return;
+    if (!pinch) pinch = { pts: {}, active: false };
+    pinch.pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    if (pinchIds().length === 2) {
+      pinch.startDist = pinchDist();
+      pinch.startZoom = state.zoom;
+      var rect = el.viewer.getBoundingClientRect();
+      var mid = pinchMid();
+      pinch.anchorX = mid.x - rect.left + el.viewer.scrollLeft;
+      pinch.anchorY = mid.y - rect.top + el.viewer.scrollTop;
+      pinch.active = pinch.startDist > 10;
+    } else if (pinchIds().length > 2) {
+      pinch.active = false;
+    }
+  }, true);
+  el.viewer.addEventListener('pointermove', function (e) {
+    if (!pinch || !pinch.active || !pinch.pts[e.pointerId]) return;
+    pinch.pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    if (pinchIds().length !== 2) return;
+    e.preventDefault();
+    var dist = pinchDist();
+    var newZoom = clamp(Math.round(pinch.startZoom * (dist / pinch.startDist) * 100) / 100, 0.5, 3);
+    if (newZoom === state.zoom) return;
+    var ratio = newZoom / state.zoom;
+    var rect = el.viewer.getBoundingClientRect();
+    var mid = pinchMid();
+    setZoom(newZoom);
+    el.viewer.scrollLeft = pinch.anchorX * ratio - (mid.x - rect.left);
+    el.viewer.scrollTop = pinch.anchorY * ratio - (mid.y - rect.top);
+    pinch.anchorX *= ratio; pinch.anchorY *= ratio;
+  }, { passive: false, capture: true });
+  function endPinchPointer(e) {
+    if (!pinch || !pinch.pts[e.pointerId]) return;
+    delete pinch.pts[e.pointerId];
+    if (pinchIds().length < 2) pinch.active = false;
+  }
+  el.viewer.addEventListener('pointerup', endPinchPointer, true);
+  el.viewer.addEventListener('pointercancel', endPinchPointer, true);
+
+  /* ------------------------------------------------------------------ *
+   *  Export: save an actual annotated PDF (highlights)
+   * ------------------------------------------------------------------ */
+  function dataUrlToBytes(dataUrl) {
+    var b64 = dataUrl.split(',')[1];
+    var bin = atob(b64);
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return arr;
+  }
+  /* Adds a real PDF markup annotation (Subtype /Highlight) instead of just
+   * painting a rectangle into the page content. This is what lets a PDF
+   * reader/editor (Adobe Acrobat, Microsoft Edge, etc.) recognize the
+   * highlight as its own object — selectable, movable, and deletable —
+   * rather than permanent, un-editable page content.
+   * `quads` is an array of {x, y, w, h} rectangles in PDF page-coordinate
+   * space (origin bottom-left), one per line the highlight covers.
+   * `colorArr` is [r, g, b] in the 0-1 range. */
+  /* A quad is either an axis-aligned {x,y,w,h} box (a text-selection
+   * highlight line) or a rotated one given as {pts:[tl,tr,bl,br]} (a
+   * segment of a freehand highlight, which isn't necessarily axis-aligned).
+   * Returns the 4 corners either way, in that same tl,tr,bl,br order. */
+  function quadCorners(q) {
+    if (q.pts) return q.pts;
+    return [
+      { x: q.x, y: q.y + q.h }, { x: q.x + q.w, y: q.y + q.h },
+      { x: q.x, y: q.y }, { x: q.x + q.w, y: q.y }
+    ];
+  }
+  function addHighlightAnnotation(doc, pdfPage, quads, colorArr) {
+    if (!quads.length) return;
+    var L = window.PDFLib;
+    var context = doc.context;
+
+    var corners = quads.map(quadCorners);
+    var allPts = [].concat.apply([], corners);
+    var bx0 = Math.min.apply(null, allPts.map(function (p) { return p.x; }));
+    var by0 = Math.min.apply(null, allPts.map(function (p) { return p.y; }));
+    var bx1 = Math.max.apply(null, allPts.map(function (p) { return p.x; }));
+    var by1 = Math.max.apply(null, allPts.map(function (p) { return p.y; }));
+
+    // A Multiply blend keeps text underneath legible, matching how real
+    // highlighter annotations are conventionally rendered.
+    var gsRef = context.register(context.obj({ Type: 'ExtGState', ca: 1, CA: 1, BM: 'Multiply' }));
+
+    var ops = [L.pushGraphicsState(), L.setGraphicsState('GS0'), L.setFillingRgbColor(colorArr[0], colorArr[1], colorArr[2])];
+    corners.forEach(function (c) {
+      ops.push(
+        L.moveTo(c[0].x - bx0, c[0].y - by0), L.lineTo(c[1].x - bx0, c[1].y - by0),
+        L.lineTo(c[3].x - bx0, c[3].y - by0), L.lineTo(c[2].x - bx0, c[2].y - by0), L.closePath()
+      );
+    });
+    ops.push(L.fill(), L.popGraphicsState());
+
+    // The form must still be declared a transparency group (S: Transparency) -
+    // some readers, notably Microsoft Edge's built-in PDF viewer, don't
+    // honor the Multiply blend at all otherwise and fall back to a washed-out
+    // fill. But the group must NOT be isolated (I must be false/omitted).
+    // An isolated group is composited against a fully transparent backdrop,
+    // so Multiply has nothing to darken and the group's opaque result then
+    // gets pasted over the page with normal (non-multiply) compositing -
+    // which is exactly what hides the text in Adobe Acrobat. A non-isolated
+    // group is composited against the real page content underneath it, so
+    // the Multiply blend actually sees and darkens the text, and Acrobat
+    // renders it the same way Edge does.
+    var formStream = context.formXObject(ops, {
+      BBox: context.obj([0, 0, bx1 - bx0, by1 - by0]),
+      Group: context.obj({ Type: 'Group', S: 'Transparency', CS: 'DeviceRGB', I: false }),
+      Resources: context.obj({ ExtGState: { GS0: gsRef } })
+    });
+    var formRef = context.register(formStream);
+
+    var quadPoints = [];
+    corners.forEach(function (c) {
+      // Per-quad order: top-left, top-right, bottom-left, bottom-right.
+      quadPoints.push(c[0].x, c[0].y, c[1].x, c[1].y, c[2].x, c[2].y, c[3].x, c[3].y);
+    });
+
+    var annotRef = context.register(context.obj({
+      Type: 'Annot',
+      Subtype: 'Highlight',
+      Rect: [bx0, by0, bx1, by1],
+      QuadPoints: quadPoints,
+      C: colorArr,
+      CA: 1,
+      F: 4,
+      AP: { N: formRef }
+    }));
+
+    var annots = pdfPage.node.lookup(L.PDFName.of('Annots'));
+    if (!(annots instanceof L.PDFArray)) {
+      annots = context.obj([]);
+      pdfPage.node.set(L.PDFName.of('Annots'), annots);
+    }
+    annots.push(annotRef);
+  }
+
+  /* Adds a real PDF freehand-pen markup annotation (Subtype /Ink), the same
+   * annotation type Adobe Acrobat and other readers use for their own pen
+   * tools, so a drawn stroke stays selectable/deletable/movable there too.
+   * `pts` is an array of {x, y} in PDF page-coordinate space (origin
+   * bottom-left). `colorArr` is [r, g, b] in the 0-1 range. `thickness` is
+   * the stroke width in PDF page units (points). */
+  function addInkAnnotation(doc, pdfPage, pts, colorArr, thickness) {
+    if (!pts || pts.length < 2) return;
+    var L = window.PDFLib;
+    var context = doc.context;
+    var pad = thickness / 2 + 0.5;
+    var xs = pts.map(function (p) { return p.x; }), ys = pts.map(function (p) { return p.y; });
+    var bx0 = Math.min.apply(null, xs) - pad, by0 = Math.min.apply(null, ys) - pad;
+    var bx1 = Math.max.apply(null, xs) + pad, by1 = Math.max.apply(null, ys) + pad;
+
+    var ops = [
+      L.pushGraphicsState(),
+      L.setLineWidth(thickness),
+      L.setLineCap(L.LineCapStyle.Round),
+      L.setLineJoin(L.LineJoinStyle.Round),
+      L.setStrokingRgbColor(colorArr[0], colorArr[1], colorArr[2]),
+      L.moveTo(pts[0].x - bx0, pts[0].y - by0)
+    ];
+    for (var i = 1; i < pts.length; i++) ops.push(L.lineTo(pts[i].x - bx0, pts[i].y - by0));
+    ops.push(L.stroke(), L.popGraphicsState());
+
+    var formStream = context.formXObject(ops, {
+      BBox: context.obj([0, 0, bx1 - bx0, by1 - by0])
+    });
+    var formRef = context.register(formStream);
+
+    var inkPath = [];
+    pts.forEach(function (p) { inkPath.push(p.x, p.y); });
+
+    var annotRef = context.register(context.obj({
+      Type: 'Annot',
+      Subtype: 'Ink',
+      Rect: [bx0, by0, bx1, by1],
+      InkList: [inkPath],
+      C: colorArr,
+      CA: 1,
+      BS: context.obj({ W: thickness }),
+      F: 4,
+      AP: { N: formRef }
+    }));
+
+    var annots = pdfPage.node.lookup(L.PDFName.of('Annots'));
+    if (!(annots instanceof L.PDFArray)) {
+      annots = context.obj([]);
+      pdfPage.node.set(L.PDFName.of('Annots'), annots);
+    }
+    annots.push(annotRef);
+  }
+
+  /* Converts a freehand highlight's path (fractions of the page, same
+   * format as a pen stroke) into a series of rotated quads in PDF
+   * page-coordinate space, one per segment, so it can be saved as a real
+   * Highlight annotation (via addHighlightAnnotation) instead of only
+   * existing on screen. Each quad is extended slightly past its segment's
+   * own endpoints so consecutive segments overlap at a bend rather than
+   * leaving a thin gap. `thicknessFrac` is a fraction of the page width. */
+  function freehandPathToPdfQuads(pathFrac, thicknessFrac, sz) {
+    var pts = pathFrac.map(function (p) { return { x: p.x * sz.width, y: sz.height - p.y * sz.height }; });
+    var half = (thicknessFrac * sz.width) / 2;
+    var quads = [];
+    for (var i = 0; i < pts.length - 1; i++) {
+      var a = pts[i], b = pts[i + 1];
+      var dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+      if (len < 0.01) continue;
+      var ux = dx / len, uy = dy / len, px = -uy, py = ux;
+      var ax = a.x - ux * half, ay = a.y - uy * half, bx = b.x + ux * half, by = b.y + uy * half;
+      quads.push({
+        pts: [
+          { x: ax + px * half, y: ay + py * half }, { x: bx + px * half, y: by + py * half },
+          { x: ax - px * half, y: ay - py * half }, { x: bx - px * half, y: by - py * half }
+        ]
+      });
+    }
+    return quads;
+  }
+
+  /* Adds a real PDF "sticky note" markup annotation (Subtype /Text) for a
+   * comment pin, so Adobe Acrobat (and any other PDF reader) shows it as an
+   * ordinary comment with its own popup, instead of the pin only existing
+   * inside this app's local storage.
+   * `px`, `py` are the pin's tip position in PDF page-coordinate space
+   * (origin bottom-left). `text` is plain text (no markup). */
+  function addCommentAnnotation(doc, pdfPage, px, py, text) {
+    var L = window.PDFLib;
+    var context = doc.context;
+    var size = 20; // icon footprint in points; readers scale their own icon glyph to fit this box
+    var rect = [px - size / 2, py - size, px + size / 2, py];
+    var annotRef = context.register(context.obj({
+      Type: 'Annot',
+      Subtype: 'Text',
+      Rect: rect,
+      Contents: L.PDFHexString.fromText(text),
+      Name: L.PDFName.of('Comment'),
+      C: [1, 0.88, 0.25],
+      Open: false,
+      F: 4
+    }));
+    var annots = pdfPage.node.lookup(L.PDFName.of('Annots'));
+    if (!(annots instanceof L.PDFArray)) {
+      annots = context.obj([]);
+      pdfPage.node.set(L.PDFName.of('Annots'), annots);
+    }
+    annots.push(annotRef);
+  }
+
+  /* Adds a real PDF file-attachment markup annotation (Subtype
+   * /FileAttachment) with the file's bytes embedded as an /EF stream, so
+   * Adobe Acrobat (and any other PDF reader) shows it as an ordinary
+   * paperclip attachment it can open/save, instead of the pin only
+   * existing inside this app's local storage.
+   * `px`, `py` are the pin's tip position in PDF page-coordinate space
+   * (origin bottom-left). `bytes` is a Uint8Array of the file's contents. */
+  function addAttachmentAnnotation(doc, pdfPage, px, py, name, mime, bytes) {
+    var L = window.PDFLib;
+    var context = doc.context;
+    var nameStr = String(name || 'file').slice(0, 180);
+    var asciiName = nameStr.replace(/[^\x20-\x7E]/g, '_') || 'file';
+
+    var fileStream = context.flateStream(bytes, {
+      Type: 'EmbeddedFile',
+      Subtype: mime || 'application/octet-stream',
+      Params: context.obj({ Size: bytes.length })
+    });
+    var fileRef = context.register(fileStream);
+
+    var filespecRef = context.register(context.obj({
+      Type: 'Filespec',
+      F: L.PDFString.of(asciiName),
+      UF: L.PDFHexString.fromText(nameStr),
+      EF: context.obj({ F: fileRef })
+    }));
+
+    var half = 9; // icon half-size in points; readers scale their own paperclip glyph to fit this box
+    var rect = [px - half, py - half, px + half, py + half];
+    var annotRef = context.register(context.obj({
+      Type: 'Annot',
+      Subtype: 'FileAttachment',
+      Rect: rect,
+      FS: filespecRef,
+      Name: L.PDFName.of('Paperclip'),
+      Contents: L.PDFString.of(asciiName),
+      C: [0.12, 0.56, 0.37],
+      F: 4
+    }));
+    var annots = pdfPage.node.lookup(L.PDFName.of('Annots'));
+    if (!(annots instanceof L.PDFArray)) {
+      annots = context.obj([]);
+      pdfPage.node.set(L.PDFName.of('Annots'), annots);
+    }
+    annots.push(annotRef);
+  }
+
+  /* The editor imports the file's own highlights, comments and attachments and re-writes all of them
+   * on Save PDF from its current state. So the old copies inside the file must be dropped first,
+   * otherwise a highlight you erased would come back (and everything else would be doubled). */
+  function stripManagedAnnotations(doc) {
+    var L = window.PDFLib;
+    doc.getPages().forEach(function (pg) {
+      var annots = pg.node.lookup(L.PDFName.of('Annots'));
+      if (!(annots instanceof L.PDFArray)) return;
+      for (var i = annots.size() - 1; i >= 0; i--) {
+        var a = annots.lookup(i);
+        if (!(a instanceof L.PDFDict)) continue;
+        var st = a.lookup(L.PDFName.of('Subtype'));
+        var type = st ? String(st.toString()).replace('/', '') : '';
+        var drop = false;
+        if (type === 'Highlight') {
+          drop = a.lookup(L.PDFName.of('QuadPoints')) instanceof L.PDFArray;
+        } else if (type === 'Text' || type === 'FreeText') {
+          var c = a.lookup(L.PDFName.of('Contents'));
+          drop = !!(c && typeof c.decodeText === 'function' && c.decodeText().trim());
+        } else if (type === 'FileAttachment') {
+          var fsd = a.lookup(L.PDFName.of('FS')), ef = fsd instanceof L.PDFDict ? fsd.lookup(L.PDFName.of('EF')) : null;
+          var fst = ef instanceof L.PDFDict ? ef.lookup(L.PDFName.of('F')) : null;
+          drop = !!(fst && typeof fst.getContents === 'function' && fst.getContents().length <= MAX_ATTACH_BYTES);
+        }
+        if (drop) annots.remove(i);
+      }
+    });
+  }
+
+  async function buildExportedPdf() {
+    var PDFDocument = window.PDFLib.PDFDocument;
+    var doc, pageCount;
+    if (state.doc.bytes) {
+      doc = await PDFDocument.load(state.doc.bytes.slice(0));
+      try { stripManagedAnnotations(doc); } catch (e) { console.warn('Could not clean old annotations', e); }
+      pageCount = doc.getPageCount();
+    } else {
+      doc = await PDFDocument.create();
+      pageCount = state.doc.numPages;
+      for (var n = 1; n <= pageCount; n++) {
+        var handle = await state.doc.open(n);
+        var off = document.createElement('canvas');
+        var task = handle.render(off, 1600, 1);
+        await task.promise;
+        var png = off.toDataURL('image/png');
+        var img = await doc.embedPng(dataUrlToBytes(png));
+        var pg = doc.addPage([off.width, off.height]);
+        pg.drawImage(img, { x: 0, y: 0, width: off.width, height: off.height });
+      }
+    }
+
+    for (var i = 1; i <= pageCount; i++) {
+      var entry = state.data.pages[String(i)];
+      var pdfPage = doc.getPage(i - 1);
+      var sz = pdfPage.getSize();
+      if (entry && entry.highlights && entry.highlights.length) {
+        entry.highlights.forEach(function (h) {
+          var c = HL_RGB[h.color] || HL_RGB.yellow;
+          var quads;
+          if (h.rects && h.rects.length) {
+            quads = h.rects.map(function (r) {
+              var rw = r.w * sz.width, rh = r.h * sz.height;
+              var rx = r.x * sz.width, ry = sz.height - r.y * sz.height - rh;
+              return { x: rx, y: ry, w: rw, h: rh };
+            });
+          } else if (h.path && h.path.length >= 2) {
+            quads = freehandPathToPdfQuads(h.path, h.width || 0.022, sz);
+          } else {
+            quads = [];
+          }
+          addHighlightAnnotation(doc, pdfPage, quads, c);
+        });
+      }
+      if (entry && entry.strokes && entry.strokes.length) {
+        entry.strokes.forEach(function (s) {
+          var c2 = DRAW_RGB[s.color] || DRAW_RGB.red;
+          var thickness = Math.max(0.5, s.size * sz.width);
+          var pts = s.points.map(function (pt) { return { x: pt.x * sz.width, y: sz.height - pt.y * sz.height }; });
+          addInkAnnotation(doc, pdfPage, pts, c2, thickness);
+        });
+      }
+      if (entry && entry.comments && entry.comments.length) {
+        entry.comments.forEach(function (c) {
+          // commentHtmlToPlainText joins lines with "\n", but PDF annotation
+          // Contents strings need "\r" (or "\r\n") line breaks - Acrobat
+          // does not treat a bare "\n" as a paragraph break and renders the
+          // whole comment as one run-on line. Convert on the way out so the
+          // comment reads back with its original line/paragraph structure.
+          var text = commentHtmlToPlainText(c.html).replace(/\n/g, '\r\n');
+          if (!text) return;
+          var px = c.x * sz.width, py = sz.height - c.y * sz.height;
+          addCommentAnnotation(doc, pdfPage, px, py, text);
+        });
+      }
+      if (entry && entry.attachments && entry.attachments.length) {
+        entry.attachments.forEach(function (a) {
+          if (!a.dataUrl) return;
+          var bytes;
+          try { bytes = dataUrlToBytes(a.dataUrl); } catch (e) { return; }
+          if (!bytes.length) return;
+          var px2 = a.x * sz.width, py2 = sz.height - a.y * sz.height;
+          addAttachmentAnnotation(doc, pdfPage, px2, py2, a.name, a.mime, bytes);
+        });
+      }
+    }
+
+    try { writeRichComments(doc); } catch (e) { console.warn('Could not store formatted comments', e); }
+    try { writeFreehandPaths(doc); } catch (e) { console.warn('Could not store freehand highlight shapes', e); }
+    return doc.save();
+  }
+
+  async function buildBytesOrToast() {
+    try {
+      return await buildExportedPdf();
+    } catch (e) {
+      console.error(e);
+      toast('Could not build the PDF' + (e && e.message ? ': ' + e.message : '.'));
+      return null;
+    }
+  }
+  /* Writes freshly-built PDF bytes out as a new file - via the native
+   * Save-As picker when available, otherwise a plain browser download -
+   * and points state.doc.fileHandle at it, so the *next* Ctrl+S goes
+   * straight back into that file instead of prompting again. */
+  async function writeAsNewFile(bytes) {
+    var base = (state.doc.name || 'document').replace(/\.pdf$/i, '').replace(/[^\w\- ]+/g, '').trim() || 'document';
+    var suggested = base + ' - annotated.pdf';
+    if (fsAccessSupported()) {
+      try {
+        var handle = await window.showSaveFilePicker({
+          suggestedName: suggested,
+          types: [{ description: 'PDF document', accept: { 'application/pdf': ['.pdf'] } }]
+        });
+        await writeBytesToHandle(handle, bytes);
+        state.doc.fileHandle = handle;
+        state.doc.name = handle.name || suggested;
+        el.docName.textContent = state.doc.name;
+        toast('Saved as ' + state.doc.name);
+        dirty = false;
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return; // the user cancelled Save As - nothing else to do
+        // the native picker failed for some other reason - fall back to a plain download below
+      }
+    }
+    await offerDownload(suggested, bytes, 'application/pdf');
+    dirty = false;
+  }
+  /* Save As (Ctrl+Shift+S, or Shift-clicking Save PDF): always asks where
+   * to put a new file, even if the current document already has a
+   * writable handle. */
+  async function saveAs() {
+    if (!state.doc) return;
+    if (!window.PDFLib) { toast('The PDF export library did not load. Make sure the vendor/pdflib folder is next to this file, or connect to the internet, then try again.'); return; }
+    el.exportBtn.disabled = true;
+    var prevText = el.exportBtn.textContent;
+    el.exportBtn.textContent = 'Preparing\u2026';
+    try {
+      var bytes = await buildBytesOrToast();
+      if (bytes) await writeAsNewFile(bytes);
+    } finally {
+      el.exportBtn.disabled = false;
+      el.exportBtn.textContent = prevText;
+    }
+  }
+  /* Save / Ctrl+S: writes straight back into the file that was opened,
+   * with no new file created. Only falls back to Save As when there's no
+   * writable handle to save into yet - a file that was opened via drag &
+   * drop, the plain <input type="file"> picker, or a browser that doesn't
+   * support the File System Access API at all. */
+  async function saveInPlace() {
+    if (!state.doc) return;
+    if (!state.doc.fileHandle) { await saveAs(); return; }
+    if (!window.PDFLib) { toast('The PDF export library did not load. Make sure the vendor/pdflib folder is next to this file, or connect to the internet, then try again.'); return; }
+    el.exportBtn.disabled = true;
+    var prevText = el.exportBtn.textContent;
+    el.exportBtn.textContent = 'Saving\u2026';
+    try {
+      var bytes = await buildBytesOrToast();
+      if (!bytes) return;
+      try {
+        if (!(await ensureWritePermission(state.doc.fileHandle))) throw new Error('permission');
+        await writeBytesToHandle(state.doc.fileHandle, bytes);
+        toast('Saved');
+        dirty = false;
+      } catch (e) {
+        console.error(e);
+        // The original file can no longer be written to (permission
+        // revoked, moved, on a drive that's gone, etc.) - fall back to
+        // Save As rather than silently losing the changes.
+        state.doc.fileHandle = null;
+        toast('Could not save to the original file - choose where to save instead.');
+        await writeAsNewFile(bytes);
+      }
+    } finally {
+      el.exportBtn.disabled = false;
+      el.exportBtn.textContent = prevText;
+    }
+  }
+  el.exportBtn.addEventListener('click', function (e) { if (e.shiftKey) saveAs(); else saveInPlace(); });
+  window.addEventListener('beforeunload', function (e) {
+    if (!dirty) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
+  /* ------------------------------------------------------------------ *
+   *  Wiring
+   * ------------------------------------------------------------------ */
+  /* window.focus() first: on some Windows setups (notably Edge's --app mode,
+   * which is how the installer's shortcuts launch this) the native file-open
+   * dialog can appear behind the app window if the app window itself isn't
+   * the OS's idea of the focused window at the moment the dialog is
+   * requested. Focusing our own window right before opening the picker
+   * makes the OS bring the resulting dialog to the front, above the editor. */
+  $('openBtn').addEventListener('click', pickAndOpenFile);
+  $('emptyOpen').addEventListener('click', pickAndOpenFile);
+  $('sampleBtn').addEventListener('click', function () { startDoc(sampleDoc()); });
+  el.fileIn.addEventListener('change', function (e) { openFile(e.target.files && e.target.files[0]); e.target.value = ''; });
+
+  el.prev.addEventListener('click', function () { scrollToPage(state.page - 1); });
+  el.next.addEventListener('click', function () { scrollToPage(state.page + 1); });
+  el.pageIn.addEventListener('change', function () { scrollToPage(el.pageIn.value); });
+  el.zoomIn.addEventListener('click', function () { setZoom(state.zoom + 0.25); });
+  el.zoomOut.addEventListener('click', function () { setZoom(state.zoom - 0.25); });
+  el.zoomFit.addEventListener('click', function () { setZoom(1); });
+  el.undoBtn.addEventListener('click', undo);
+  el.redoBtn.addEventListener('click', redo);
+
+  ['dragenter', 'dragover'].forEach(function (t) {
+    el.viewer.addEventListener(t, function (e) { e.preventDefault(); el.viewer.classList.add('dragover'); });
+  });
+  ['dragleave', 'drop'].forEach(function (t) {
+    el.viewer.addEventListener(t, function (e) { e.preventDefault(); el.viewer.classList.remove('dragover'); });
+  });
+  el.viewer.addEventListener('drop', function (e) {
+    // Try to get a writable FileSystemFileHandle for the dropped item first
+    // (supported in Chrome/Edge via DataTransferItem.getAsFileSystemHandle),
+    // so a dropped PDF can be saved-in-place with Ctrl+S just like one
+    // opened through the Open button. Falls back to a handle-less File if
+    // that API isn't available or the drop wasn't a single file item.
+    var item = e.dataTransfer && e.dataTransfer.items && e.dataTransfer.items[0];
+    if (item && typeof item.getAsFileSystemHandle === 'function') {
+      item.getAsFileSystemHandle().then(function (handle) {
+        if (!handle || handle.kind !== 'file') {
+          var f = e.dataTransfer.files && e.dataTransfer.files[0];
+          if (f) openFile(f);
+          return;
+        }
+        ensureWritePermission(handle).then(function (canWrite) {
+          handle.getFile().then(function (file) {
+            openFile(file, canWrite ? handle : null);
+          });
+        });
+      }).catch(function () {
+        var f = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) openFile(f);
+      });
+      return;
+    }
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) openFile(f);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    var a = document.activeElement;
+    // Only a genuine text-entry control should suppress Ctrl+Z/Y/S - a
+    // checkbox, range slider, or color swatch can hold keyboard focus too,
+    // but typing "z" there was never text entry, so it shouldn't block the
+    // shortcut. (Without this, drawing/erasing/highlighting right after
+    // toggling a checkbox - e.g. "Free-draw on OCR text" - leaves that
+    // checkbox focused, since those tools' pointerdown handlers call
+    // preventDefault() and that also suppresses the browser's normal
+    // focus-blur-on-click, so the checkbox never lets go of focus.)
+    var typing = a && (
+      a.tagName === 'TEXTAREA' ||
+      (a.tagName === 'INPUT' && !/^(checkbox|radio|range|color|button|submit|reset|file)$/i.test(a.type)) ||
+      a.isContentEditable
+    );
+    if (e.key === 'Escape') {
+      if (!el.aiMenu.hidden) { hideAiMenu(); return; }
+      if (!el.aiResultModal.hidden) { closeAiResult(); return; }
+      if (!el.aiSettingsModal.hidden) { closeAiSettings(); return; }
+      if (!el.cmtPanel.hidden) { closeCommentDialog(); return; }
+      if (!el.atPop.hidden) { closeAttachPopover(); return; }
+      if (state.tool !== 'none') { state.tool = 'none'; updateToolUI(); }
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && !typing && state.doc) {
+      var k = e.key.toLowerCase();
+      if (k === 'z') { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
+      if (k === 'y') { e.preventDefault(); redo(); return; }
+      if (k === 's') { e.preventDefault(); if (e.shiftKey) saveAs(); else saveInPlace(); return; }
+    }
+    if (typing || !state.doc || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'ArrowLeft') scrollToPage(state.page - 1);
+    else if (e.key === 'ArrowRight') scrollToPage(state.page + 1);
+    else if (e.key === 'h' || e.key === 'H') setTool('highlight');
+    else if (e.key === 'd' || e.key === 'D') setTool('draw');
+    else if (e.key === 'c' || e.key === 'C') setTool('comment');
+    else if (e.key === 'a' || e.key === 'A') setTool('attach');
+    else if (e.key === 'e' || e.key === 'E') setTool('erase');
+  });
+
+  window.addEventListener('beforeunload', function () { if (state.doc) persist(); });
+  setSaveState('');
+
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function (e) { console.warn('Service worker registration failed', e); });
+    });
+  }
+
+  /* ------------------------------------------------------------------ *
+   *  AI translate (Gemini) — select text in the PDF, right-click, pick
+   *  "Translate selection". API key + prompt are kept in localStorage
+   *  only (never sent anywhere except directly to Google's API).
+   * ------------------------------------------------------------------ */
+  var AI_KEY_LS = 'pdfEditor.ai.key', AI_MODEL_LS = 'pdfEditor.ai.model', AI_LANG_LS = 'pdfEditor.ai.lang', AI_PROMPT_LS = 'pdfEditor.ai.prompt';
+  var AI_DEFAULT_PROMPT = 'Translate the following text to {lang}. Reply with only the translation, no notes or quotation marks:\n\n{text}';
+  var aiSelectedText = '';
+
+  function aiLoad(key, fallback) {
+    try { var v = localStorage.getItem(key); return v === null ? fallback : v; } catch (e) { return fallback; }
+  }
+  function aiSave(key, val) { try { localStorage.setItem(key, val); } catch (e) { /* storage full or blocked */ } }
+
+  function openAiSettings() {
+    el.aiApiKey.value = aiLoad(AI_KEY_LS, '');
+    el.aiModel.value = aiLoad(AI_MODEL_LS, 'gemini-2.5-flash');
+    el.aiLang.value = aiLoad(AI_LANG_LS, 'English');
+    el.aiPrompt.value = aiLoad(AI_PROMPT_LS, AI_DEFAULT_PROMPT);
+    el.aiResultModal.hidden = true;
+    el.aiBackdrop.hidden = false;
+    el.aiSettingsModal.hidden = false;
+    setTimeout(function () { el.aiApiKey.focus(); }, 0);
+  }
+  function closeAiSettings() { el.aiSettingsModal.hidden = true; if (el.aiResultModal.hidden) el.aiBackdrop.hidden = true; }
+  function saveAiSettings() {
+    aiSave(AI_KEY_LS, el.aiApiKey.value.trim());
+    aiSave(AI_MODEL_LS, el.aiModel.value);
+    aiSave(AI_LANG_LS, el.aiLang.value.trim() || 'English');
+    aiSave(AI_PROMPT_LS, el.aiPrompt.value.trim() || AI_DEFAULT_PROMPT);
+    closeAiSettings();
+    toast('AI settings saved');
+  }
+  el.aiSettingsBtn.addEventListener('click', openAiSettings);
+  el.aiMenuSettings.addEventListener('click', function () { hideAiMenu(); openAiSettings(); });
+  el.aiSettingsClose.addEventListener('click', closeAiSettings);
+  el.aiSettingsSave.addEventListener('click', saveAiSettings);
+
+  function hideAiMenu() { el.aiMenu.hidden = true; }
+  function showAiMenu(x, y) {
+    el.aiMenu.hidden = false;
+    var r = el.aiMenu.getBoundingClientRect();
+    var mx = Math.min(x, window.innerWidth - r.width - 8);
+    var my = Math.min(y, window.innerHeight - r.height - 8);
+    el.aiMenu.style.left = Math.max(4, mx) + 'px';
+    el.aiMenu.style.top = Math.max(4, my) + 'px';
+  }
+
+  function closeAiResult() { el.aiResultModal.hidden = true; if (el.aiSettingsModal.hidden) el.aiBackdrop.hidden = true; }
+  el.aiResultClose.addEventListener('click', closeAiResult);
+  el.aiBackdrop.addEventListener('click', function () { closeAiResult(); closeAiSettings(); });
+
+  function aiPromptFor(text) {
+    var lang = aiLoad(AI_LANG_LS, 'English');
+    var tmpl = aiLoad(AI_PROMPT_LS, AI_DEFAULT_PROMPT);
+    return tmpl.split('{lang}').join(lang).split('{text}').join(text);
+  }
+
+  function runAiTranslate(text) {
+    var key = aiLoad(AI_KEY_LS, '');
+    el.aiResultTitle.textContent = 'Translate to ' + aiLoad(AI_LANG_LS, 'English');
+    el.aiResultSrc.hidden = false;
+    el.aiResultSrc.textContent = text.length > 400 ? text.slice(0, 400) + '\u2026' : text;
+    el.aiSettingsModal.hidden = true;
+    el.aiBackdrop.hidden = false;
+    el.aiResultModal.hidden = false;
+    if (!key) {
+      el.aiResultBody.className = 'ai-modal-body err';
+      el.aiResultBody.textContent = 'No Gemini API key is saved yet. Click the gear icon (or "AI settings\u2026" in the menu) to add one.';
+      return;
+    }
+    el.aiResultBody.className = 'ai-modal-body center';
+    el.aiResultBody.textContent = 'Translating\u2026';
+    var model = aiLoad(AI_MODEL_LS, 'gemini-2.5-flash');
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(key);
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: aiPromptFor(text) }] }] })
+    }).then(function (resp) {
+      return resp.json().then(function (data) { return { ok: resp.ok, status: resp.status, data: data }; });
+    }).then(function (r) {
+      if (!r.ok) throw new Error((r.data && r.data.error && r.data.error.message) || ('Request failed (' + r.status + ')'));
+      var cand = r.data && r.data.candidates && r.data.candidates[0];
+      var parts = cand && cand.content && cand.content.parts;
+      var out = parts ? parts.map(function (p) { return p.text || ''; }).join('') : '';
+      el.aiResultBody.className = 'ai-modal-body';
+      el.aiResultBody.textContent = out.trim() || '(empty response)';
+    }).catch(function (e) {
+      el.aiResultBody.className = 'ai-modal-body err';
+      el.aiResultBody.textContent = 'Could not reach Gemini: ' + (e && e.message ? e.message : 'unknown error');
+    });
+  }
+  el.aiMenuTranslate.addEventListener('click', function () {
+    var t = aiSelectedText;
+    hideAiMenu();
+    if (t) runAiTranslate(t);
+  });
+
+  document.addEventListener('contextmenu', function (e) {
+    var layer = e.target.closest && e.target.closest('.text-layer');
+    if (!layer) { hideAiMenu(); return; }
+    var sel = window.getSelection();
+    var text = sel ? sel.toString().trim() : '';
+    if (!text) { hideAiMenu(); return; }
+    e.preventDefault();
+    aiSelectedText = text;
+    showAiMenu(e.clientX, e.clientY);
+  });
+  document.addEventListener('mousedown', function (e) {
+    if (!el.aiMenu.hidden && !el.aiMenu.contains(e.target)) hideAiMenu();
+  });
+  window.addEventListener('scroll', hideAiMenu, true);
+  window.addEventListener('resize', hideAiMenu);
+})();
+
+</script>
+</body>
+</html>

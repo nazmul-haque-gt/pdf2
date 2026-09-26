@@ -1,0 +1,13 @@
+{
+  "appId": "com.example.pdfeditor",
+  "appName": "PDF Editor",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "webContentsDebuggingEnabled": true
+  }
+}
